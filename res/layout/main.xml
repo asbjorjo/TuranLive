@@ -4,9 +4,19 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-<TextView  
-    android:layout_width="fill_parent" 
-    android:layout_height="wrap_content" 
-    android:text="@string/hello"
-    />
+    <RelativeLayout android:layout_height="wrap_content" android:layout_width="match_parent" android:id="@+id/relativeLayout1">
+        <Button android:text="Start Recording" 
+        	android:layout_height="wrap_content" 
+        	android:id="@+id/recordStart" 
+        	android:layout_width="fill_parent" 
+        	android:clickable="true" 
+        	android:onClick="onRecordStart" android:layout_above="@+id/antEnable"/>
+        <Button android:text="Enable ANT" 
+        	android:layout_height="wrap_content" 
+        	android:id="@+id/antEnable" 
+        	android:layout_width="fill_parent" 
+        	android:clickable="true" 
+        	android:onClick="onAntEnable" 
+        	android:layout_alignParentBottom="true"/>
+    </RelativeLayout>
 </LinearLayout>
