@@ -1,26 +1,22 @@
 package no.turan.live.android;
 
 import static no.turan.live.Constants.TAG;
-
-import com.wahoofitness.api.WFAntException;
-import com.wahoofitness.api.WFAntNotSupportedException;
-import com.wahoofitness.api.WFAntServiceNotInstalledException;
-import com.wahoofitness.api.WFDisplaySettings;
-import com.wahoofitness.api.WFHardwareConnector;
-import com.wahoofitness.api.WFHardwareConnectorTypes.WFAntError;
-import com.wahoofitness.api.WFHardwareConnectorTypes.WFHardwareState;
-import com.wahoofitness.api.comm.WFSensorConnection;
-
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
-public class TuranLive extends Activity implements WFHardwareConnector.Callback {
-	private WFHardwareConnector mHardwareConnector;
+import com.wahoofitness.api.WFHardwareConnector;
+
+public class TuranLive extends Activity {
 
 	/** Called when the activity is first created. */
     @Override
@@ -29,161 +25,73 @@ public class TuranLive extends Activity implements WFHardwareConnector.Callback 
     	Log.d(TAG, "onCreate");
 
     	Context context = this.getApplicationContext();
-    	String statusText = "";
+    	String antStatus = "";
     	
     	// check for ANT hardware support.
-        if (WFHardwareConnector.hasAntSupport(context)) {
-	        	
-	        try {
-	        	boolean bResumed = false;
-	        	
-	        	// attempt to retrieve the previously suspended WFHardwareConnector instance.
-	        	//
-	        	// see the onRetainNonConfigurationInstance method.
-	        	mHardwareConnector = (WFHardwareConnector) getLastNonConfigurationInstance();
-	        	if (mHardwareConnector != null) {
-	        		// attempt to resume the WFHardwareConnector instance.
-	        		if (!(bResumed = mHardwareConnector.resume(this))) {
-	        			// if the WFHardwareConnector instance failed to resume,
-	        			// it must be re-initialized.
-	        			mHardwareConnector.connectAnt();
-	        		}
-	        	}
-	        	
-	        	// if there is no suspended WFHardwareConnector instance,
-	        	// configure the singleton instance.
-	        	else {
-			         // get the hardware connector singleton instance.
-			        mHardwareConnector = WFHardwareConnector.getInstance(this, this);
-					mHardwareConnector.connectAnt();
-	        	}
-		        
-		        // restore connection state only if the previous
-		        // WFHardwareConnector instance was not resumed.
-		        if (!bResumed) {
-			        // the connection state is cached in the state
-			        // bundle (onSaveInstanceState).  this is used to
-			        // restore previous connections.  if the Bundle
-			        // is null, no connections are configured.
-			        mHardwareConnector.restoreInstanceState(savedInstanceState);
-		        }
-		        
-		        // configure the display settings.
-		        //
-		        // this demonstrates how to use the display
-		        // settings.  if this step is skipped, the
-		        // default settings will be used.
-		        WFDisplaySettings settings = mHardwareConnector.getDisplaySettings();
-		        settings.staleDataTimeout = 5.0f;          // seconds, default = 5
-		        settings.staleDataString = "--";           // string to display when data is stale, default = "--"
-		        settings.useMetricUnits = true;            // display metric units, default = false
-		        settings.bikeWheelCircumference = 2.07f;   // meters, default = 2.07
-		        settings.bikeCoastingTimeout = 3.0f;       // seconds, default = 3    
-		        mHardwareConnector.setDisplaySettings(settings);
-		        statusText = "ANT OK";
-	        }
-	        catch (WFAntNotSupportedException nse) {
-	        	// ANT hardware not supported.
-	        	statusText = "ANT not supported.";
-	        }
-	        catch (WFAntServiceNotInstalledException nie) {
-
-				Toast installNotification = Toast.makeText(context, this.getResources().getString( R.string.ant_service_required), Toast.LENGTH_LONG);
-				installNotification.show();
-
-				// open the Market Place app, search for the ANT Radio service.
-				mHardwareConnector.destroy();
-				mHardwareConnector = null;
-				WFHardwareConnector.installAntService(this);
-
-				// close this app.
-				finish();
-	        }
-			catch (WFAntException e) {
-				statusText = "ANT initialization error.";
-			}
-       }
+    	if (WFHardwareConnector.hasAntSupport(context)) {
+        	context.startService(new Intent(this, AntService.class));
+    	}
         else {
         	// ANT hardware not supported.
-        	statusText = "ANT not supported.";
+        	antStatus = "ANT not supported.";
         }
-        
+
         if(!this.isFinishing())
         {
             setContentView(R.layout.main);
-        	((TextView)findViewById(R.id.antStatus)).setText(statusText);
-        	((TextView)findViewById(R.id.antStatus)).setVisibility(TextView.VISIBLE);
-
+            ((TextView)findViewById(R.id.antStatus)).setText(antStatus);
         }
     }
     
-    /* (non-Javadoc)
-	 * @see android.app.Activity#onDestroy()
+    public void onExit(View view) {
+    	Log.d(TAG, "onExit enter");
+		  
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		  
+		builder.setMessage(this.getResources().getString(R.string.exit_verify));
+		builder.setCancelable(false);
+
+		builder.setPositiveButton(this.getResources().getString(R.string.dialog_confirm), new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				Log.i(TAG, "exitApplication: Exit");
+				finish();
+			}
+		});
+
+		builder.setNegativeButton(this.getResources().getString(R.string.dialog_cancel), new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int id) {
+				Log.i(TAG, "exitApplication: Cancelled");
+				dialog.cancel();
+			}
+		});
+
+		AlertDialog exitDialog = builder.create();
+		exitDialog.show();
+    }
+
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
 	 */
 	@Override
-	protected void onDestroy() {
-		Log.d(TAG, "onDestroy enter");
-
-		try {
-			if (mHardwareConnector != null) {
-				mHardwareConnector.destroy();
-				mHardwareConnector = null;
-			}
-		} catch (Exception e) {
-			Log.w(TAG, "Exception in onDestroy", e);
-		}
-
-		super.onDestroy();
-
-		Log.d(TAG, "onDestroy exit");
+	public boolean onCreateOptionsMenu(Menu menu) {
+		MenuInflater inflater = getMenuInflater();
+		inflater.inflate(R.menu.main_options, menu);
+		return true;
 	}
 
-	public void onRecordStart(View view) {
-    	Log.d(TAG, "onRecordStart");    	
-    }
+    /* (non-Javadoc)
+	 * @see android.app.Activity#onMenuItemSelected(int, android.view.MenuItem)
+	 */
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		switch(item.getItemId()) {
+		case R.id.sensor_setup:
+			Log.d(TAG, "Starting Sensor Setup");
+			Intent intent = new Intent(this, SensorSetup.class);
+			startActivity(intent);
+		default:
+			return super.onMenuItemSelected(featureId, item);
+		}
+	}
     
-    public void onExit(View view) {
-    	Log.d(TAG, "onExit");
-    	finish();
-    }
-
-	@Override
-	public void hwConnAntError(WFAntError error) {
-		switch (error) {
-		case WF_ANT_ERROR_CLAIM_FAILED:
-        	((TextView)findViewById(R.id.antStatus)).setText("ANT radio in use.");
-			mHardwareConnector.forceAntConnection(getResources().getString(R.string.app_name));
-			break;
-		}
-	}
-
-	@Override
-	public void hwConnConnectedSensor(WFSensorConnection arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void hwConnConnectionRestored() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void hwConnDisconnectedSensor(WFSensorConnection arg0) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void hwConnHasData() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void hwConnStateChanged(WFHardwareState arg0) {
-		// TODO Auto-generated method stub
-		
-	}
 }

@@ -4,12 +4,6 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
-        <Button android:text="Start Recording" 
-        	android:layout_height="wrap_content" 
-        	android:id="@+id/recordStart" 
-        	android:layout_width="fill_parent" 
-        	android:clickable="true" 
-        	android:onClick="onRecordStart" android:layout_above="@+id/exit"/>
         <Button android:text="Exit" 
         	android:layout_height="wrap_content" 
         	android:id="@+id/exit" 

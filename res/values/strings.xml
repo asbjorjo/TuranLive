@@ -2,4 +2,8 @@
 <resources>
     <string name="app_name">Turan Live</string>
     <string name="ant_service_required">ANT Radio Service must be installed</string>
+    <string name="dialog_cancel">Cancel</string>
+    <string name="dialog_confirm">OK</string>
+    <string name="exit_verify">Are you sure you want to exit?</string>
+    <string name="setup_sensors">Setup Sensors</string>
 </resources>
