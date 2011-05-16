@@ -16,11 +16,16 @@ import com.wahoofitness.api.WFAntServiceNotInstalledException;
 import com.wahoofitness.api.WFHardwareConnector;
 import com.wahoofitness.api.WFHardwareConnectorTypes.WFAntError;
 import com.wahoofitness.api.WFHardwareConnectorTypes.WFHardwareState;
+import com.wahoofitness.api.WFHardwareConnectorTypes.WFSensorType;
+import com.wahoofitness.api.comm.WFConnectionParams;
+import com.wahoofitness.api.comm.WFHeartrateConnection;
 import com.wahoofitness.api.comm.WFSensorConnection;
+import com.wahoofitness.api.comm.WFSensorConnection.WFSensorConnectionStatus;
 
-public class AntService extends Service implements WFHardwareConnector.Callback {
+public class AntService extends Service implements WFHardwareConnector.Callback, WFSensorConnection.Callback  {
 	private final IBinder mBinder = new AntBinder();
 	private WFHardwareConnector mHardwareConnector;
+	private WFHeartrateConnection heartRate;
 	
 	@Override
 	public void hwConnAntError(WFAntError error) {
@@ -34,26 +39,38 @@ public class AntService extends Service implements WFHardwareConnector.Callback 
 
 	@Override
 	public void hwConnConnectedSensor(WFSensorConnection connection) {
-		// TODO Auto-generated method stub
-		
+		Log.d(TAG, "Connected sensor:" + connection.getSensorType() + " - " + connection.getDeviceNumber());
 	}
 
 	@Override
 	public void hwConnConnectionRestored() {
-		// TODO Auto-generated method stub
-		
+		Log.d(TAG, "hwConnConnectionRestored");
 	}
 
 	@Override
 	public void hwConnDisconnectedSensor(WFSensorConnection connection) {
-		// TODO Auto-generated method stub
-		
+		Log.d(TAG, "Disconnected sensor:" + connection.getSensorType() + " - " + connection.getDeviceNumber());
 	}
 
 	@Override
 	public void hwConnHasData() {
-		// TODO Auto-generated method stub
-		
+		Log.d(TAG, "hwConnHasData");	
+		if (heartRate != null) {
+			if (heartRate.isConnected()) {
+				Log.d(TAG, "Current HR:" +heartRate.getHeartrateData().computedHeartrate);
+			} else {
+				Log.d(TAG, "heartRate not connected");
+				WFConnectionParams connectionParams = new WFConnectionParams();
+				connectionParams.sensorType = WFSensorType.WF_SENSORTYPE_HEARTRATE;
+				heartRate = (WFHeartrateConnection)mHardwareConnector.initSensorConnection(connectionParams);
+				if (heartRate != null)
+				{
+					heartRate.setCallback(this);
+				}
+			}
+		} else {
+			Log.d(TAG, "No hearRate");
+		}
 	}
 
 	@Override
@@ -91,20 +108,22 @@ public class AntService extends Service implements WFHardwareConnector.Callback 
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		Log.d(TAG, "AntService.onCreate");
+		
     	Context context = this.getApplicationContext();
-    	String antStatus = "";
-
+    	
     	try {
     		mHardwareConnector = WFHardwareConnector.getInstance(this, this);
     		mHardwareConnector.connectAnt();
     			        
-            antStatus = "ANT OK";
+            Log.d(TAG, "ANT Connected");
         }
         catch (WFAntNotSupportedException nse) {
         	// ANT hardware not supported.
-        	antStatus = "ANT not supported.";
+        	Log.e(TAG, "ANT Not Supported");
         }
         catch (WFAntServiceNotInstalledException nie) {
+        	Log.e(TAG, "ANT Not Installed");
 
 			Toast installNotification = Toast.makeText(context, this.getResources().getString( R.string.ant_service_required), Toast.LENGTH_LONG);
 			installNotification.show();
@@ -118,9 +137,10 @@ public class AntService extends Service implements WFHardwareConnector.Callback 
 			stopSelf();
         }
 		catch (WFAntException e) {
-			antStatus = "ANT initialization error.";
+			Log.e(TAG, "ANT Initialization error", e);
 		}
-		Log.d(TAG,antStatus);
+		
+		Log.d(TAG, "AntService created");
 	}
 	/* (non-Javadoc)
 	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
@@ -132,7 +152,7 @@ public class AntService extends Service implements WFHardwareConnector.Callback 
 	}
 	public class AntBinder extends Binder {
         AntService getService() {
-            // Return this instance of LocalService so clients can call public methods
+            // Return this instance of AntService so clients can call public methods
             return AntService.this;
         }
     }
@@ -141,4 +161,22 @@ public class AntService extends Service implements WFHardwareConnector.Callback 
 		return mBinder;
 	}
 
+	@Override
+	public void connectionStateChanged(WFSensorConnectionStatus status) {
+		Log.d(TAG, "connectionStateChanged enter");
+		if (heartRate != null && !heartRate.isValid())
+		{
+			Log.d(TAG, "heartRate invalid, reconnect");
+			heartRate.setCallback(null);
+			heartRate = null;
+			WFConnectionParams connectionParams = new WFConnectionParams();
+			connectionParams.sensorType = WFSensorType.WF_SENSORTYPE_HEARTRATE;
+			heartRate = (WFHeartrateConnection)mHardwareConnector.initSensorConnection(connectionParams);
+			if (heartRate != null)
+			{
+				heartRate.setCallback(this);
+			}
+		}
+		Log.d(TAG, "connectionStateChanged exit");
+	}
 }
