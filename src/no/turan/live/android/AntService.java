@@ -102,6 +102,23 @@ public class AntService extends Service implements WFHardwareConnector.Callback,
 	}
 	}
 
+	@Override
+	public void onDestroy() {
+		Log.d(TAG, "AntService.onDestroy");
+		if (heartRate != null) {
+			if (heartRate.isConnected()) {
+				heartRate.disconnect();
+			}
+			heartRate.setCallback(null);
+			heartRate = null;
+		}
+		if (mHardwareConnector != null) {
+			mHardwareConnector.destroy();
+			mHardwareConnector = null;
+		}
+		super.onDestroy();
+	}
+
 	/* (non-Javadoc)
 	 * @see android.app.Service#onCreate()
 	 */

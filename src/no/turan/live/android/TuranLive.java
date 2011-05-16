@@ -18,6 +18,15 @@ import com.wahoofitness.api.WFHardwareConnector;
 
 public class TuranLive extends Activity {
 
+	@Override
+	protected void onDestroy() {
+		Log.d(TAG, "onDestroy");
+		Context context = this.getApplicationContext();
+		
+		context.stopService(new Intent(this, AntService.class));
+		super.onDestroy();
+	}
+
 	/** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
