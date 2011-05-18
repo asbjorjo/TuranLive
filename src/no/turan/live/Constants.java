@@ -1,6 +1,9 @@
 package no.turan.live;
 
 public abstract class Constants {
+	/**
+	 * Used by log statements.
+	 */
 	public static final String TAG = "TuranLive";
 	
 	/**	

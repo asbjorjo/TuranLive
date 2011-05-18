@@ -23,7 +23,7 @@ public class TuranLive extends Activity {
 		Log.d(TAG, "onDestroy");
 		Context context = this.getApplicationContext();
 		
-		context.stopService(new Intent(this, AntService.class));
+		context.stopService(new Intent(this, CollectorService.class));
 		super.onDestroy();
 	}
 
@@ -38,7 +38,7 @@ public class TuranLive extends Activity {
     	
     	// check for ANT hardware support.
     	if (WFHardwareConnector.hasAntSupport(context)) {
-        	context.startService(new Intent(this, AntService.class));
+        	context.startService(new Intent(this, CollectorService.class));
     	}
         else {
         	// ANT hardware not supported.
@@ -94,10 +94,6 @@ public class TuranLive extends Activity {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		switch(item.getItemId()) {
-		case R.id.sensor_setup:
-			Log.d(TAG, "Starting Sensor Setup");
-			Intent intent = new Intent(this, SensorSetup.class);
-			startActivity(intent);
 		default:
 			return super.onMenuItemSelected(featureId, item);
 		}

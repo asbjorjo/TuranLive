@@ -2,10 +2,15 @@ package no.turan.live.android;
 
 
 import static no.turan.live.Constants.TAG;
+
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -20,12 +25,17 @@ import com.wahoofitness.api.WFHardwareConnectorTypes.WFSensorType;
 import com.wahoofitness.api.comm.WFConnectionParams;
 import com.wahoofitness.api.comm.WFHeartrateConnection;
 import com.wahoofitness.api.comm.WFSensorConnection;
+import com.wahoofitness.api.comm.WFConnectionParams.WFDeviceParams;
 import com.wahoofitness.api.comm.WFSensorConnection.WFSensorConnectionStatus;
+import com.wahoofitness.api.data.WFHeartrateData;
 
-public class AntService extends Service implements WFHardwareConnector.Callback, WFSensorConnection.Callback  {
+public class CollectorService extends Service implements WFHardwareConnector.Callback, WFSensorConnection.Callback, LocationListener {
 	private final IBinder mBinder = new AntBinder();
 	private WFHardwareConnector mHardwareConnector;
 	private WFHeartrateConnection heartRate;
+	private Long previousHRtime = 0L;
+	private short deadHRcount = 0;
+	
 	
 	@Override
 	public void hwConnAntError(WFAntError error) {
@@ -54,22 +64,52 @@ public class AntService extends Service implements WFHardwareConnector.Callback,
 
 	@Override
 	public void hwConnHasData() {
-		Log.d(TAG, "hwConnHasData");	
+		Log.d(TAG, "hwConnHasData");
 		if (heartRate != null) {
-			if (heartRate.isConnected()) {
-				Log.d(TAG, "Current HR:" +heartRate.getHeartrateData().computedHeartrate);
+			if (heartRate.isConnected() && heartRate.isValid()) {
+				if (deadHRcount > 10) {
+					Log.d(TAG, "HR got over 10 dead samples, disconnecting");
+					heartRate.disconnect();
+					deadHRcount = 0;
+				}
+				Log.d(TAG, "Connected to sensor: " + heartRate.getDeviceNumber());
+				WFHeartrateData data = heartRate.getHeartrateData();
+				if (data.timestamp != previousHRtime) { 
+					previousHRtime = data.timestamp;
+					deadHRcount = 0;
+					Log.d(TAG, data.timestamp  + " HR: " +data.computedHeartrate);
+					Intent intent = new Intent(this, UploadService.class);
+					intent.putExtra("no.turan.live.android.TIME", System.currentTimeMillis()/1000L);
+					intent.putExtra("no.turan.live.android.HR", data.computedHeartrate);
+					intent.putExtra("no.turan.live.android.EXERCISE", "4589");
+					startService(intent);
+				} else {
+					Log.d(TAG, "No new HR");
+					deadHRcount++;
+				}
 			} else {
 				Log.d(TAG, "heartRate not connected");
-				WFConnectionParams connectionParams = new WFConnectionParams();
-				connectionParams.sensorType = WFSensorType.WF_SENSORTYPE_HEARTRATE;
-				heartRate = (WFHeartrateConnection)mHardwareConnector.initSensorConnection(connectionParams);
-				if (heartRate != null)
-				{
-					heartRate.setCallback(this);
+				if (heartRate.getConnectionStatus() == WFSensorConnectionStatus.WF_SENSOR_CONNECTION_STATUS_CONNECTING) {
+					Log.d(TAG, "sensor connecting");
+				} else {
+					WFConnectionParams connectionParams = new WFConnectionParams();
+					connectionParams.sensorType = WFSensorType.WF_SENSORTYPE_HEARTRATE;
+					heartRate = (WFHeartrateConnection)mHardwareConnector.initSensorConnection(connectionParams);
+					if (heartRate != null)
+					{
+						heartRate.setCallback(this);
+					}
 				}
 			}
 		} else {
-			Log.d(TAG, "No hearRate");
+			Log.d(TAG, "No heartRate");
+			WFConnectionParams connectionParams = new WFConnectionParams();
+			connectionParams.sensorType = WFSensorType.WF_SENSORTYPE_HEARTRATE;
+			heartRate = (WFHeartrateConnection)mHardwareConnector.initSensorConnection(connectionParams);
+			if (heartRate != null)
+			{
+				heartRate.setCallback(this);
+			}
 		}
 	}
 
@@ -116,6 +156,10 @@ public class AntService extends Service implements WFHardwareConnector.Callback,
 			mHardwareConnector.destroy();
 			mHardwareConnector = null;
 		}
+		
+		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		lm.removeUpdates(this);
+		
 		super.onDestroy();
 	}
 
@@ -128,6 +172,9 @@ public class AntService extends Service implements WFHardwareConnector.Callback,
 		Log.d(TAG, "AntService.onCreate");
 		
     	Context context = this.getApplicationContext();
+    	
+    	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    	lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     	
     	try {
     		mHardwareConnector = WFHardwareConnector.getInstance(this, this);
@@ -168,9 +215,9 @@ public class AntService extends Service implements WFHardwareConnector.Callback,
 		return START_STICKY;
 	}
 	public class AntBinder extends Binder {
-        AntService getService() {
+        CollectorService getService() {
             // Return this instance of AntService so clients can call public methods
-            return AntService.this;
+            return CollectorService.this;
         }
     }
 	@Override
@@ -191,9 +238,29 @@ public class AntService extends Service implements WFHardwareConnector.Callback,
 			heartRate = (WFHeartrateConnection)mHardwareConnector.initSensorConnection(connectionParams);
 			if (heartRate != null)
 			{
+				Log.d(TAG, "found sensor: " + heartRate.getDeviceNumber());
 				heartRate.setCallback(this);
 			}
 		}
 		Log.d(TAG, "connectionStateChanged exit");
+	}
+
+	@Override
+	public void onLocationChanged(Location location) {
+		Log.d(TAG, "Location changed: " + location.toString());
+	}
+
+	@Override
+	public void onProviderDisabled(String provider) {
+		Log.d(TAG, "Location provider disabled: " + provider);
+	}
+
+	@Override
+	public void onProviderEnabled(String provider) {
+		Log.d(TAG, "Location provider enabled: " + provider);
+	}
+
+	@Override
+	public void onStatusChanged(String provider, int status, Bundle extras) {
 	}
 }
