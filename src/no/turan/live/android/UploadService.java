@@ -44,7 +44,7 @@ public class UploadService extends IntentService {
 		Integer exerciseId = intent.getIntExtra(SAMPLE_EXERCISE_KEY, -1);
 		long TIME = intent.getLongExtra(SAMPLE_TIME_KEY, -1L);
 		int HR = intent.getIntExtra(SAMPLE_HR_KEY, -1);
-		int SPEED = intent.getIntExtra(SAMPLE_SPEED_KEY, -1);
+		float SPEED = intent.getFloatExtra(SAMPLE_SPEED_KEY, -1);
 		double ALTITUDE = intent.getDoubleExtra(SAMPLE_ALTITUDE_KEY, -1);
 		double LATITUDE = intent.getDoubleExtra(SAMPLE_LATITUDE_KEY, -1);
 		double LONGITUDE = intent.getDoubleExtra(SAMPLE_LONGITUDE_KEY, -1);
@@ -64,7 +64,7 @@ public class UploadService extends IntentService {
 		}
 		if (SPEED >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good SPEED");
-			addToJSON(json, Integer.toString(SPEED), "speed");
+			addToJSON(json, Float.toString(SPEED), "speed");
 		}
 		if (ALTITUDE >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good ALTITUDE");

@@ -75,11 +75,15 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 
 	@Override
 	public void hwConnHasData() {
-		Log.d(TAG, "CollectorService.hwConnHasData");
+		Log.v(TAG, "CollectorService.hwConnHasData");
 		
 		if (sampleTime < System.currentTimeMillis()/1000L) {
 			// Send a sample every second.
-			startService(sampleIntent);
+			if (sampleIntent.hasExtra(SAMPLE_TIME_KEY)) {
+				Log.d(TAG, "CollectorService.hwConnHasData - sample for processing");
+				Log.v(TAG, "CollectorSerivce.hwConnHasData - " + sampleIntent.getExtras().toString());
+				startService(sampleIntent);
+			}
 
 			sampleTime = System.currentTimeMillis()/1000L;
 			sampleIntent = new Intent(this, UploadService.class);
@@ -88,15 +92,19 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		}
 		
 		if (hrSensor != null) {
+			Log.v(TAG, "CollectorService.hwConnHasData - HR");
 			hrSensor.retrieveData(sampleIntent);
 		}
 		if (powerSensor != null) {
+			Log.v(TAG, "CollectorService.hwConnHasData - power");
 			powerSensor.retrieveData(sampleIntent);
 		}
 		if (cadenceSensor != null) {
+			Log.v(TAG, "CollectorService.hwConnHasData - cadence");
 			cadenceSensor.retrieveData(sampleIntent);
 		}
 		if (speedSensor != null) {
+			Log.v(TAG, "CollectorService.hwConnHasData - speed");
 			speedSensor.retrieveData(sampleIntent);
 		}
 	}

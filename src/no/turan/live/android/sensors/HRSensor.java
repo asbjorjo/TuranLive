@@ -17,12 +17,14 @@ public class HRSensor extends Sensor implements IHRSensor {
 	
 	@Override
 	public int getHR() {
-		Log.d(TAG, "HRSensor.getValue");
+		Log.v(TAG, "HRSensor.getValue");
 		int hr = -1;
 		
 		if (mSensor != null && mSensor.isConnected()) {
-			Log.d(TAG, "HRSensor.getValue - good sensor");
+			Log.v(TAG, "HRSensor.getValue - good sensor");
 			WFHeartrateData data = (WFHeartrateData) mSensor.getData();
+			
+			Log.d(TAG, "HRSensor.getValue - " + data.timestamp + " - " + data.computedHeartrate);
 			
 			if (data.timestamp != mPreviousSampleTime) {
 				Log.d(TAG, "HRSensor.getValue - good data");
@@ -31,9 +33,13 @@ public class HRSensor extends Sensor implements IHRSensor {
 				mDeadSamples = 0;
 			} else {
 				deadSample();
+				if (mDeadSamples < 2) {
+					Log.d(TAG, "HRSensor.getValue - first dead sample");
+					hr = data.computedHeartrate;
+				}
 			}
 		} else {
-			Log.d(TAG, "HRSensor.getValue - no HRSensor");
+			Log.w(TAG, "HRSensor.getValue - no HRSensor");
 			connectSensor();
 		}
 		return hr;
@@ -41,10 +47,10 @@ public class HRSensor extends Sensor implements IHRSensor {
 
 	@Override
 	public void retrieveData(Intent intent) {
-		Log.d(TAG, "HRSensor.retrieveData");
+		Log.v(TAG, "HRSensor.retrieveData");
 		int HR = getHR();
 		if (HR >= 0) {
-			Log.d(TAG, "HRSensor.retrieveData - good data");
+			Log.v(TAG, "HRSensor.retrieveData - good data - " + HR);
 			intent.putExtra(SAMPLE_HR_KEY, HR);
 		}
 	}
