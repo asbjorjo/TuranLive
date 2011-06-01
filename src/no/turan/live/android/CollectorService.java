@@ -2,6 +2,9 @@ package no.turan.live.android;
 
 
 import static no.turan.live.Constants.TAG;
+import static no.turan.live.Constants.LIVE_NOTIFICATION;
+import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -213,7 +216,14 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		catch (WFAntException e) {
 			Log.e(TAG, "ANT Initialization error", e);
 		}
-this.running = true;
+		
+		Notification notification = new Notification(R.drawable.turan, getText(R.string.app_name), System.currentTimeMillis());
+		Intent notificationIntent = new Intent(this, TuranLive.class);
+		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+		notification.setLatestEventInfo(this, getText(R.string.app_name), getText(R.string.app_name), pendingIntent);
+		startForeground(LIVE_NOTIFICATION, notification);
+		
+		this.running = true;
 		return START_STICKY;
 	}
 	
