@@ -1,9 +1,14 @@
 package no.turan.live.android;
 
+import static no.turan.live.Constants.SAMPLE_EXERCISE_KEY;
+import static no.turan.live.Constants.SAMPLE_HR_KEY;
+import static no.turan.live.Constants.SAMPLE_TIME_KEY;
 import static no.turan.live.Constants.TAG;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+
+import no.turan.live.Constants;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -27,39 +32,42 @@ public class UploadService extends IntentService {
 	
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Log.d(TAG, "TuranService.onHandleIntent");
+		Log.d(TAG, "UploadService.onHandleIntent");
 		
 		JSONArray jsonArray = new JSONArray();
 		JSONObject json = new JSONObject();
 		
-		String exerciseId = intent.getStringExtra("no.turan.live.android.EXERCISE");
-		Long TIME = intent.getLongExtra("no.turan.live.android.TIME", -1L);
-		Short HR = intent.getShortExtra("no.turan.live.android.HR", (short) -1);
+		Integer exerciseId = intent.getIntExtra(SAMPLE_EXERCISE_KEY, -1);
+		Long TIME = intent.getLongExtra(SAMPLE_TIME_KEY, -1L);
+		Short HR = intent.getShortExtra(SAMPLE_HR_KEY, (short) -1);
 		
-		Log.d(TAG, intent.toString());
+		if (intent.getExtras() != null) {
+			Log.d(TAG, intent.getExtras().toString());
+		}
 		
 		if (TIME > 0) {
+			Log.d(TAG, "UploadService.onHandleIntent - good TIME");
 			try {
 				json.put("time", TIME);
 			} catch (JSONException e) {
-				Log.e(TAG, "Error adding TIME to JSON", e);
+				Log.e(TAG, "UploadService.onHandleIntent - Error adding TIME to JSON", e);
 			}
 		}
-		
 		if (HR >= 0) {
+			Log.d(TAG, "UploadService.onHandleIntent - good HR");
 			try {
 				json.put("hr", HR);
 			} catch (JSONException e) {
-				Log.e(TAG, "Error adding HR to JSON", e);
+				Log.e(TAG, "UploadService.onHandleIntent - Error adding HR to JSON", e);
 			}
 		}
 		
 		jsonArray.put(json);
 
-		if (exerciseId != null) {
+		if (exerciseId > 0) {
 			try {
 				String URL = "http://turan.no/exercise/update/live/" + exerciseId;
-				Log.d(TAG, "Posting update to " + URL);
+				Log.d(TAG, "UploadService.onHandleIntent - Posting update to " + URL);
 				Log.d(TAG, jsonArray.toString());
 				HttpClient client = new DefaultHttpClient();
 				HttpPost post = new HttpPost(URL);
@@ -68,14 +76,14 @@ public class UploadService extends IntentService {
 				post.setEntity(se);
 				client.execute(post);
 			} catch (UnsupportedEncodingException e) {
-				Log.e(TAG, "StringEntity failed", e);
+				Log.e(TAG, "UploadService.onHandleIntent - StringEntity failed", e);
 			} catch (ClientProtocolException e) {
-				Log.e(TAG, "Error while posting data", e);
+				Log.e(TAG, "UploadService.onHandleIntent - Error while posting data", e);
 			} catch (IOException e) {
-				Log.e(TAG, "Error while posting data", e);
+				Log.e(TAG, "UploadService.onHandleIntent - Error while posting data", e);
 			}
 		} else {
-			Log.d(TAG, "jsonString not found in intent");
+			Log.d(TAG, "UploadService.onHandleIntent - invalid excerciseId - " + exerciseId);
 		}
 	}
 

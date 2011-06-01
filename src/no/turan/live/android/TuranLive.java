@@ -25,13 +25,13 @@ public class TuranLive extends Activity {
 	private ServiceConnection mCollectorConnection = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
-			Log.d(TAG, "disconnecting CollectorService");
+			Log.d(TAG, "ServiceConnection.onServiceDisconnected - CollectorService");
 			mCollectorBound = false;
 		}
 		
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
-			Log.d(TAG, "connecting CollectorService");
+			Log.d(TAG, "ServiceConnection.onServiceConnected -  CollectorService");
 			mCollector =  (ICollectorService) service;
 			mCollectorBound = true;
 		}
@@ -39,13 +39,13 @@ public class TuranLive extends Activity {
 	
 	@Override
 	protected void onStart() {
-		Log.d(TAG, "TuranLive.onStart");
+		Log.d(TAG, "onStart");
 		super.onStart();
 		
 		Intent intent = new Intent(this, CollectorService.class);
 		bindService(intent, mCollectorConnection, Context.BIND_AUTO_CREATE);
 		
-		Log.d(TAG, "checking if CollectorService is running");
+		Log.d(TAG, "onStart - checking if CollectorService is running");
 		if (mCollectorBound) {
 			Button start = (Button) findViewById(R.id.start);
 			if (mCollector.isRunning()) {
@@ -81,7 +81,7 @@ public class TuranLive extends Activity {
     }
     
     public void onExit(View view) {
-    	Log.d(TAG, "onExit enter");
+    	Log.d(TAG, "onExit");
 		  
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		  
@@ -90,14 +90,14 @@ public class TuranLive extends Activity {
 
 		builder.setPositiveButton(this.getResources().getString(R.string.dialog_confirm), new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				Log.i(TAG, "exitApplication: Exit");
+				Log.i(TAG, "exitApplication - Exit");
 				finish();
 			}
 		});
 
 		builder.setNegativeButton(this.getResources().getString(R.string.dialog_cancel), new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				Log.i(TAG, "exitApplication: Cancelled");
+				Log.i(TAG, "exitApplication - Cancel");
 				dialog.cancel();
 			}
 		});
@@ -111,8 +111,10 @@ public class TuranLive extends Activity {
     	Button button = (Button) view;
     	Context context = this.getApplicationContext();
     	Intent service = new Intent(this, CollectorService.class);
+    	
     	if (mCollectorBound && mCollector.isRunning()) {
     		unbindService(mCollectorConnection);
+    		mCollectorBound = false;
     		context.stopService(new Intent(this, CollectorService.class));
     		button.setText(R.string.start);
     	} else {
@@ -149,7 +151,6 @@ public class TuranLive extends Activity {
 		
 		if (mCollectorBound) {
 			unbindService(mCollectorConnection);
-			mCollectorBound = false;
 		}
 	}
     
