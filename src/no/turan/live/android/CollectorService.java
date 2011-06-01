@@ -14,6 +14,7 @@ import no.turan.live.android.sensors.ICadenceSensor;
 import no.turan.live.android.sensors.IHRSensor;
 import no.turan.live.android.sensors.IPowerSensor;
 import no.turan.live.android.sensors.ISpeedSensor;
+import no.turan.live.android.sensors.PowerSensor;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -229,6 +230,8 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private void setupSensors() {
 		hrSensor = new HRSensor();
 		hrSensor.setupSensor(mHardwareConnector);
+		powerSensor = new PowerSensor();
+		powerSensor.setupSensor(mHardwareConnector);
 	}
 
 	public class CollectorBinder extends Binder implements ICollectorService {
