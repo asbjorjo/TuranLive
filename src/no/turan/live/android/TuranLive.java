@@ -3,20 +3,58 @@ package no.turan.live.android;
 import static no.turan.live.Constants.TAG;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
-import com.wahoofitness.api.WFHardwareConnector;
-
 public class TuranLive extends Activity {
+	ICollectorService mCollector;
+	boolean mCollectorBound;
+	
+	private ServiceConnection mCollectorConnection = new ServiceConnection() {
+		@Override
+		public void onServiceDisconnected(ComponentName name) {
+			Log.d(TAG, "disconnecting CollectorService");
+			mCollectorBound = false;
+		}
+		
+		@Override
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			Log.d(TAG, "connecting CollectorService");
+			mCollector =  (ICollectorService) service;
+			mCollectorBound = true;
+		}
+	};
+	
+	@Override
+	protected void onStart() {
+		Log.d(TAG, "TuranLive.onStart");
+		super.onStart();
+		
+		Intent intent = new Intent(this, CollectorService.class);
+		bindService(intent, mCollectorConnection, Context.BIND_AUTO_CREATE);
+		
+		Log.d(TAG, "checking if CollectorService is running");
+		if (mCollectorBound) {
+			Button start = (Button) findViewById(R.id.start);
+			if (mCollector.isRunning()) {
+				start.setText(R.string.stop);
+			} else {
+				start.setText(R.string.start);
+			}
+		}
+	}
 
 	@Override
 	protected void onDestroy() {
@@ -33,17 +71,7 @@ public class TuranLive extends Activity {
         super.onCreate(savedInstanceState);
     	Log.d(TAG, "onCreate");
 
-    	Context context = this.getApplicationContext();
     	String antStatus = "";
-    	
-    	// check for ANT hardware support.
-    	if (WFHardwareConnector.hasAntSupport(context)) {
-        	context.startService(new Intent(this, CollectorService.class));
-    	}
-        else {
-        	// ANT hardware not supported.
-        	antStatus = "ANT not supported.";
-        }
 
         if(!this.isFinishing())
         {
@@ -77,6 +105,22 @@ public class TuranLive extends Activity {
 		AlertDialog exitDialog = builder.create();
 		exitDialog.show();
     }
+    
+    public void onStartCollector(View view) {
+    	Log.d(TAG, "onStartCollector");
+    	Button button = (Button) view;
+    	Context context = this.getApplicationContext();
+    	Intent service = new Intent(this, CollectorService.class);
+    	if (mCollectorBound && mCollector.isRunning()) {
+    		unbindService(mCollectorConnection);
+    		context.stopService(new Intent(this, CollectorService.class));
+    		button.setText(R.string.start);
+    	} else {
+    		context.startService(service);
+    		bindService(service, mCollectorConnection, Context.BIND_AUTO_CREATE);
+    		button.setText(R.string.stop);
+    	}
+    }
 
 	/* (non-Javadoc)
 	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
@@ -96,6 +140,16 @@ public class TuranLive extends Activity {
 		switch(item.getItemId()) {
 		default:
 			return super.onMenuItemSelected(featureId, item);
+		}
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		
+		if (mCollectorBound) {
+			unbindService(mCollectorConnection);
+			mCollectorBound = false;
 		}
 	}
     

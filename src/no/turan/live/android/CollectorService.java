@@ -2,7 +2,6 @@ package no.turan.live.android;
 
 
 import static no.turan.live.Constants.TAG;
-
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -25,16 +24,16 @@ import com.wahoofitness.api.WFHardwareConnectorTypes.WFSensorType;
 import com.wahoofitness.api.comm.WFConnectionParams;
 import com.wahoofitness.api.comm.WFHeartrateConnection;
 import com.wahoofitness.api.comm.WFSensorConnection;
-import com.wahoofitness.api.comm.WFConnectionParams.WFDeviceParams;
 import com.wahoofitness.api.comm.WFSensorConnection.WFSensorConnectionStatus;
 import com.wahoofitness.api.data.WFHeartrateData;
 
 public class CollectorService extends Service implements WFHardwareConnector.Callback, WFSensorConnection.Callback, LocationListener {
-	private final IBinder mBinder = new AntBinder();
+	private final IBinder mBinder = new CollectorBinder();
 	private WFHardwareConnector mHardwareConnector;
 	private WFHeartrateConnection heartRate;
 	private Long previousHRtime = 0L;
 	private short deadHRcount = 0;
+	private boolean running;
 	
 	
 	@Override
@@ -160,6 +159,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		lm.removeUpdates(this);
 		
+		this.running = false;
 		super.onDestroy();
 	}
 
@@ -169,10 +169,20 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		Log.d(TAG, "AntService.onCreate");
+		Log.d(TAG, "CollectorService.onCreate");
 		
-    	Context context = this.getApplicationContext();
-    	
+    	this.running = false;
+		Log.d(TAG, "CollectorService created");
+	}
+	/* (non-Javadoc)
+	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
+	 */
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.d(TAG, "AntService.onStartCommand");
+		
+		Context context = this.getApplicationContext();
+		
     	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
     	
@@ -203,25 +213,20 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		catch (WFAntException e) {
 			Log.e(TAG, "ANT Initialization error", e);
 		}
-		
-		Log.d(TAG, "AntService created");
-	}
-	/* (non-Javadoc)
-	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
-	 */
-	@Override
-	public int onStartCommand(Intent intent, int flags, int startId) {
-		Log.d(TAG, "AntService.onStartCommand");
+this.running = true;
 		return START_STICKY;
 	}
-	public class AntBinder extends Binder {
-        CollectorService getService() {
-            // Return this instance of AntService so clients can call public methods
-            return CollectorService.this;
-        }
+	
+	public class CollectorBinder extends Binder implements ICollectorService {
+		@Override
+		public boolean isRunning() {
+			return running;
+		}
     }
+
 	@Override
 	public IBinder onBind(Intent intent) {
+		Log.d(TAG, "binding to CollectorService");
 		return mBinder;
 	}
 
