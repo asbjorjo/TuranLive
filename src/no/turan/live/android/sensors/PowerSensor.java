@@ -11,7 +11,7 @@ import com.wahoofitness.api.data.WFBikePowerData;
 import android.content.Intent;
 import android.util.Log;
 
-public class PowerSensor extends Sensor implements IPowerSensor {
+public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor {
 	public PowerSensor() {
 		super(WFSensorType.WF_SENSORTYPE_BIKE_POWER);
 	}
@@ -37,13 +37,30 @@ public class PowerSensor extends Sensor implements IPowerSensor {
 		return power;
 	}
 
+	@Override
+	public int getCadence() {
+		int cadence = -1;
+		
+		if (mSensor != null && mSensor.isConnected()) {
+			WFBikePowerData data = (WFBikePowerData) mSensor.getData();
+			if (mDeadSamples == 0) {
+				cadence = data.ucInstCadence;
+			}
+		}
+		
+		return cadence;
+	}
 
 	@Override
 	public void retrieveData(Intent intent) {
 		int power = getPower();
+		int cadence = getCadence();
 		
 		if (power >= 0) {
 			intent.putExtra(SAMPLE_POWER_KEY, power);
+		}
+		if (cadence >= 0) {
+			intent.putExtra(Constants.SAMPLE_CADENCE_KEY, cadence);
 		}
 	}
 
