@@ -6,7 +6,7 @@ public abstract class Constants {
 	 */
 	public static final String TAG = "TuranLive";
 	public static final int DEAD_SAMPLE_THRESHOLD = 10;
-	public static final Integer EXERCISE_ID = 4709;
+	public static final Integer EXERCISE_ID = 4711;
 	
 	public static final String SAMPLE_TIME_KEY = "no.turan.live.android.TIME";
 	public static final String SAMPLE_EXERCISE_KEY = "no.turan.live.android.EXERCISE";

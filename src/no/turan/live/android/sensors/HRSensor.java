@@ -16,9 +16,9 @@ public class HRSensor extends Sensor implements IHRSensor {
 	}
 	
 	@Override
-	public short getHR() {
+	public int getHR() {
 		Log.d(TAG, "HRSensor.getValue");
-		short hr = -1;
+		int hr = -1;
 		
 		if (mSensor != null && mSensor.isConnected()) {
 			Log.d(TAG, "HRSensor.getValue - good sensor");
@@ -42,7 +42,7 @@ public class HRSensor extends Sensor implements IHRSensor {
 	@Override
 	public void retrieveData(Intent intent) {
 		Log.d(TAG, "HRSensor.retrieveData");
-		short HR = getHR();
+		int HR = getHR();
 		if (HR >= 0) {
 			Log.d(TAG, "HRSensor.retrieveData - good data");
 			intent.putExtra(SAMPLE_HR_KEY, HR);

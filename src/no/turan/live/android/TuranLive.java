@@ -90,14 +90,14 @@ public class TuranLive extends Activity {
 
 		builder.setPositiveButton(this.getResources().getString(R.string.dialog_confirm), new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				Log.i(TAG, "exitApplication - Exit");
+				Log.i(TAG, "exitApplication - exit");
 				finish();
 			}
 		});
 
 		builder.setNegativeButton(this.getResources().getString(R.string.dialog_cancel), new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
-				Log.i(TAG, "exitApplication - Cancel");
+				Log.i(TAG, "exitApplication - cancel");
 				dialog.cancel();
 			}
 		});

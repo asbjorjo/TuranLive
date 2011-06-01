@@ -176,7 +176,6 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		
     	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-    	lm.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
     	
     	try {
     		mHardwareConnector = WFHardwareConnector.getInstance(this, this);
@@ -252,6 +251,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		if (location.hasAltitude()) {
 			sampleIntent.putExtra(SAMPLE_ALTITUDE_KEY, location.getAltitude());
 		}
+		sampleIntent.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed());
 	}
 
 	@Override
