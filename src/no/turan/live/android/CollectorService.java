@@ -230,8 +230,10 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private void setupSensors() {
 		hrSensor = new HRSensor();
 		hrSensor.setupSensor(mHardwareConnector);
-		powerSensor = new PowerSensor();
-		powerSensor.setupSensor(mHardwareConnector);
+		PowerSensor power = new PowerSensor();
+		power.setupSensor(mHardwareConnector);
+		powerSensor = power;
+		cadenceSensor = power;
 	}
 
 	public class CollectorBinder extends Binder implements ICollectorService {
