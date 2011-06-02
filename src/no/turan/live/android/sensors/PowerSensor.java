@@ -57,8 +57,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 				Log.d(TAG, "PowerSensor.getPower - power only");
 				WFBikePowerPowerOnlyData powerdata = rawData.powerOnlyData;
 				timestamp = powerdata.eventCount;
-				newPower = powerdata.averagePower;
-			default:
+				newPower = powerdata.instantPower;
 				break;
 			}
 			if (timestamp != mPreviousSampleTime) {
@@ -81,12 +80,52 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 		int cadence = -1;
 		
 		if (mSensor != null && mSensor.isConnected()) {
-			WFBikePowerData data = (WFBikePowerData) mSensor.getData();
-			Log.d(TAG, "PowerSensor.getCadence - " + data.timestamp + " - " + data.ucInstCadence);
-			
+			WFBikePowerRawData rawData = (WFBikePowerRawData) mSensor.getRawData();
+			long timestamp = -1;
+			long newCadence = -1;
+			/*
+			 * Check which type of sensor is connected and get data accordingly.
+			 */
+			switch (rawData.sensorType) {
+			case WF_BIKE_POWER_TYPE_UNIDENTIFIED:
+				Log.d(TAG, "PowerSensor.getCadence - unidentified");
+				break;
+			case WF_BIKE_POWER_TYPE_CTF:
+				Log.d(TAG, "PowerSensor.getCadence - crank torque frequency");
+				WFBikePowerCTFData ctfdata = rawData.crankTorqueFreqData;
+				timestamp = ctfdata.timestamp;
+				newCadence = ctfdata.averageCadence;
+				break;
+			case WF_BIKE_POWER_TYPE_CRANK_TORQUE:
+				Log.d(TAG, "PowerSensor.getCadence - crank torque");
+				WFBikePowerCrankTorqueData ctdata = rawData.crankTorqueData;
+				timestamp = ctdata.accumulatedCrankTicks;
+				if (ctdata.instantCadence != 0xFF) {
+					newCadence = ctdata.instantCadence;
+				} else {
+					newCadence = ctdata.averageCadence;
+				}
+				break;
+			case WF_BIKE_POWER_TYPE_WHEEL_TORQUE:
+				Log.d(TAG, "PowerSensor.getCadence - wheel torque");
+				WFBikePowerWheelTorqueData wtdata = rawData.wheelTorqueData;
+				timestamp = wtdata.accumulatedWheelTicks;
+				if (wtdata.instantCadence != 0xFF) {
+					newCadence = wtdata.instantCadence;
+				}
+				break;
+			case WF_BIKE_POWER_TYPE_POWER_ONLY:
+				Log.d(TAG, "PowerSensor.getCadence - power only");
+				WFBikePowerPowerOnlyData powerdata = rawData.powerOnlyData;
+				timestamp = powerdata.eventCount;
+				if (powerdata.instantCadence != 0xFF) {
+					newCadence = powerdata.instantCadence;
+				}
+				break;
+			}
 			if (mDeadSamples == 0) {
 				Log.d(TAG, "PowerSensor.getCadence - last power sapmle was good");
-				cadence = data.ucInstCadence;
+				cadence = (int) newCadence;
 			}
 		}
 		
