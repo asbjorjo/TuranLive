@@ -4,13 +4,21 @@
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     >
+        <Button android:text="@string/go_live" 
+        	android:layout_height="wrap_content" 
+        	android:id="@+id/goLive" 
+        	android:layout_width="fill_parent" 
+        	android:clickable="true" 
+        	android:onClick="onGoLive"
+        	android:enabled="false"
+        	android:layout_alignParentTop="true"/> 
         <Button android:text="@string/start" 
         	android:layout_height="wrap_content" 
-        	android:id="@+id/start" 
+        	android:id="@+id/antCollect" 
         	android:layout_width="fill_parent" 
         	android:clickable="true" 
         	android:onClick="onStartCollector" 
-        	android:layout_above="@+id/antExit"/>
+        	android:layout_below="@+id/goLive"/>
         <Button android:text="Exit" 
         	android:layout_height="wrap_content" 
         	android:id="@+id/exit" 

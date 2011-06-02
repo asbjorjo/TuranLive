@@ -45,7 +45,8 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private IPowerSensor powerSensor;
 	private ICadenceSensor cadenceSensor;
 	private ISpeedSensor speedSensor;
-	private boolean running;
+	private boolean mLive;
+	private boolean mCollecting;
 	private long sampleTime;
 	private Intent sampleIntent;
 
@@ -83,7 +84,9 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 			if (sampleIntent.hasExtra(SAMPLE_TIME_KEY)) {
 				Log.d(TAG, "CollectorService.hwConnHasData - sample for processing");
 				Log.v(TAG, "CollectorSerivce.hwConnHasData - " + sampleIntent.getExtras().toString());
-				startService(sampleIntent);
+				if (mLive) {
+					startService(sampleIntent);
+				}
 			}
 
 			sampleTime = System.currentTimeMillis()/1000L;
@@ -156,7 +159,8 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		lm.removeUpdates(this);
 		
-		this.running = false;
+		mLive = false;
+		mCollecting = false;
 		super.onDestroy();
 	}
 
@@ -171,9 +175,10 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		sampleIntent = new Intent(this, UploadService.class);
 		sampleTime = System.currentTimeMillis()/1000L;
 		
-    	this.running = false;
-		Log.d(TAG, "CollectorService created");
+    	mLive = false;
+    	mCollecting = false;
 	}
+
 	/* (non-Javadoc)
 	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
 	 */
@@ -223,23 +228,46 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		notification.setLatestEventInfo(this, getText(R.string.app_name), getText(R.string.app_name), pendingIntent);
 		startForeground(R.id.running_live, notification);
 		
-		this.running = true;
+		mCollecting = true;
+		
+		Intent startedIntent = new Intent("no.turan.live.android.COLLECTOR_STARTED");
+		sendBroadcast(startedIntent);
+		
 		return START_STICKY;
 	}
 	
 	private void setupSensors() {
 		hrSensor = new HRSensor();
 		hrSensor.setupSensor(mHardwareConnector);
-		PowerSensor power = new PowerSensor();
-		power.setupSensor(mHardwareConnector);
-		powerSensor = power;
-		cadenceSensor = power;
+		//PowerSensor power = new PowerSensor();
+		//power.setupSensor(mHardwareConnector);
+		//powerSensor = power;
+		//cadenceSensor = power;
 	}
 
 	public class CollectorBinder extends Binder implements ICollectorService {
 		@Override
-		public boolean isRunning() {
-			return running;
+		public boolean isLive() {
+			Log.d(TAG, "CollectorBinder.isLive - " + mLive);
+			return mLive;
+		}
+
+		@Override
+		public void goLive() {
+			Log.d(TAG, "CollectorBinder.goLive");
+			mLive = true;
+		}
+
+		@Override
+		public boolean isCollecting() {
+			Log.d(TAG, "CollectorBinder.isCollecting - " + mCollecting);
+			return mCollecting;
+		}
+
+		@Override
+		public void goOff() {
+			Log.d(TAG, "CollectorBinder.goOff");
+			mLive = false;
 		}
     }
 

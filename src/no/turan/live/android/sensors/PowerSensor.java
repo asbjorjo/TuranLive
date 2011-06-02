@@ -22,8 +22,9 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 		
 		if (mSensor != null && mSensor.isConnected()) {
 			WFBikePowerData data = (WFBikePowerData) mSensor.getData();
-			Log.d(TAG, "PowerSensor.getValue - " + data.timestamp + " - " + data.ulAveragePower + " - " + data.ucInstCadence);
+			Log.d(TAG, "PowerSensor.getPower - " + data.timestamp + " - " + data.ulAveragePower);
 			if (data.timestamp != mPreviousSampleTime) {
+				Log.d(TAG, "PowerSensor.getPower - good sample");
 				power = (int) data.ulAveragePower;
 				mPreviousSampleTime = data.timestamp;
 				mDeadSamples = 0;
@@ -31,6 +32,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 				deadSample();
 			}
 		} else {
+			Log.w(TAG, "PowerSensor.getPower - no sensor");
 			connectSensor();
 		}
 		
@@ -39,11 +41,15 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 
 	@Override
 	public int getCadence() {
+		Log.v(TAG, "PowerSensor.getCadence");
 		int cadence = -1;
 		
 		if (mSensor != null && mSensor.isConnected()) {
 			WFBikePowerData data = (WFBikePowerData) mSensor.getData();
+			Log.d(TAG, "PowerSensor.getCadence - " + data.timestamp + " - " + data.ucInstCadence);
+			
 			if (mDeadSamples == 0) {
+				Log.d(TAG, "PowerSensor.getCadence - last power sapmle was good");
 				cadence = data.ucInstCadence;
 			}
 		}

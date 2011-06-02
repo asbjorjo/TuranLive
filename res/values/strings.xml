@@ -6,6 +6,8 @@
     <string name="dialog_confirm">OK</string>
     <string name="exit_verify">Are you sure you want to exit?</string>
     <string name="setup_sensors">Setup Sensors</string>
-    <string name="start">Go Live!</string>
-    <string name="stop">Go offline</string>
+    <string name="start">Start data collection</string>
+    <string name="stop">Stop data collection</string>
+    <string name="go_live">Go Live!</string>
+	<string name="go_off">Go offline</string>
 </resources>

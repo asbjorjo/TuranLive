@@ -3,10 +3,12 @@ package no.turan.live.android;
 import static no.turan.live.Constants.TAG;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -27,6 +29,7 @@ public class TuranLive extends Activity {
 		public void onServiceDisconnected(ComponentName name) {
 			Log.d(TAG, "ServiceConnection.onServiceDisconnected - CollectorService");
 			mCollectorBound = false;
+			updateMain();
 		}
 		
 		@Override
@@ -34,6 +37,17 @@ public class TuranLive extends Activity {
 			Log.d(TAG, "ServiceConnection.onServiceConnected -  CollectorService");
 			mCollector =  (ICollectorService) service;
 			mCollectorBound = true;
+			updateMain();
+		}
+	};
+	
+	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (intent.getAction().equals("no.turan.live.android.COLLECTOR_STARTED")) {
+				Log.d(TAG, "no.turan.live.android.COLLECTOR_STARTED");
+				updateMain();
+			}
 		}
 	};
 	
@@ -41,27 +55,15 @@ public class TuranLive extends Activity {
 	protected void onStart() {
 		Log.d(TAG, "onStart");
 		super.onStart();
-		
+
 		Intent intent = new Intent(this, CollectorService.class);
 		bindService(intent, mCollectorConnection, Context.BIND_AUTO_CREATE);
-		
-		Log.d(TAG, "onStart - checking if CollectorService is running");
-		if (mCollectorBound) {
-			Button start = (Button) findViewById(R.id.start);
-			if (mCollector.isRunning()) {
-				start.setText(R.string.stop);
-			} else {
-				start.setText(R.string.start);
-			}
-		}
 	}
 
 	@Override
 	protected void onDestroy() {
 		Log.d(TAG, "onDestroy");
-		Context context = this.getApplicationContext();
-		
-		context.stopService(new Intent(this, CollectorService.class));
+		unregisterReceiver(broadcastReceiver);
 		super.onDestroy();
 	}
 
@@ -69,12 +71,15 @@ public class TuranLive extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-    	Log.d(TAG, "onCreate");
+
+        Log.d(TAG, "onCreate");
 
     	String antStatus = "";
 
         if(!this.isFinishing())
         {
+        	IntentFilter filter = new IntentFilter("no.turan.live.android.COLLECTOR_STARTED");
+        	registerReceiver(broadcastReceiver, filter);
             setContentView(R.layout.main);
             ((TextView)findViewById(R.id.antStatus)).setText(antStatus);
         }
@@ -91,7 +96,7 @@ public class TuranLive extends Activity {
 		builder.setPositiveButton(this.getResources().getString(R.string.dialog_confirm), new DialogInterface.OnClickListener() {
 			public void onClick(DialogInterface dialog, int id) {
 				Log.i(TAG, "exitApplication - exit");
-				finish();
+				exitTuran();
 			}
 		});
 
@@ -106,22 +111,58 @@ public class TuranLive extends Activity {
 		exitDialog.show();
     }
     
-    public void onStartCollector(View view) {
+    private void updateMain() {
+    	Log.d(TAG, "updateMain");
+    	Button start = (Button) findViewById(R.id.antCollect);
+    	Button live  = (Button) findViewById(R.id.goLive);
+    	
+    	if (mCollectorBound && mCollector.isCollecting()) {
+			start.setText(R.string.stop);
+
+			if (mCollector.isLive()) {
+				live.setText(R.string.go_off);
+			} else {
+				live.setText(R.string.go_live);
+			}
+			live.setEnabled(true);
+    	} else {
+    		start.setText(R.string.start);
+    		live.setText(R.string.go_live);
+    		live.setEnabled(false);
+    	}
+    }
+    
+    private void exitTuran() {
+    	Intent service = new Intent(this, CollectorService.class);
+    	stopService(service);
+    	finish();
+	}
+
+	public void onStartCollector(View view) {
     	Log.d(TAG, "onStartCollector");
-    	Button button = (Button) view;
-    	Context context = this.getApplicationContext();
     	Intent service = new Intent(this, CollectorService.class);
     	
-    	if (mCollectorBound && mCollector.isRunning()) {
+    	if (mCollectorBound && mCollector.isCollecting()) {
+    		mCollector.goOff();
     		unbindService(mCollectorConnection);
     		mCollectorBound = false;
-    		context.stopService(new Intent(this, CollectorService.class));
-    		button.setText(R.string.start);
-    	} else {
-    		context.startService(service);
+    		stopService(new Intent(this, CollectorService.class));
+    		bindService(service, mCollectorConnection, BIND_AUTO_CREATE);
+        } else {
+    		startService(service);
     		bindService(service, mCollectorConnection, Context.BIND_AUTO_CREATE);
-    		button.setText(R.string.stop);
     	}
+    }
+    
+    public void onGoLive(View view) {
+    	Log.d(TAG, "onGoLive");
+    	
+    	if (mCollector.isLive()) {
+    		mCollector.goOff();
+    	} else {
+    		mCollector.goLive();
+    	}
+    	updateMain();
     }
 
 	/* (non-Javadoc)
@@ -147,11 +188,31 @@ public class TuranLive extends Activity {
 
 	@Override
 	protected void onStop() {
+		Log.d(TAG, "onStop");
 		super.onStop();
-		
 		if (mCollectorBound) {
 			unbindService(mCollectorConnection);
+			mCollectorBound = false;
 		}
 	}
-    
+
+	@Override
+	protected void onResume() {
+		Log.d(TAG, "onResume");
+		super.onResume();
+
+		updateMain();
+	}
+
+	@Override
+	protected void onPostResume() {
+		Log.d(TAG, "onPostResume");
+		super.onPostResume();
+	}
+
+	@Override
+	public void onBackPressed() {
+		Log.d(TAG, "onBackPressed");
+		super.onBackPressed();
+	}    
 }

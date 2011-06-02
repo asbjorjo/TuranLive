@@ -104,6 +104,8 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 			Log.d(TAG, "SpeedCadenceSensor.deadCadenceSample threshold exceeded: " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber());
 			disconnectSensor();
 			connectSensor();
+			mDeadCadenceSamples = 0;
+			mDeadSpeedSamples = 0;
 		} else {
 			Log.v(TAG, "SpeedCadenceSensor.deadSample - speed: " + mDeadSpeedSamples + " cadence: " + mDeadCadenceSamples);
 		}
