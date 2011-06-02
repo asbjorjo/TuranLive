@@ -76,6 +76,7 @@ public class TuranLive extends Activity {
 	}
 
 	protected void updateDisplay(Bundle values) {
+		Log.d(TAG, "updateDisplay");
 		int hr = values.getInt(SAMPLE_HR_KEY, -1);
 		int speed = values.getInt(SAMPLE_SPEED_KEY, -1);
 		int cadence = values.getInt(SAMPLE_CADENCE_KEY, -1);
