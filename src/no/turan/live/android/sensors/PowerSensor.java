@@ -26,6 +26,11 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 
 		if (mSensor != null && mSensor.isConnected()) {
 			WFBikePowerRawData rawData = (WFBikePowerRawData) mSensor.getRawData();
+			long timestamp = -1;
+			long newPower = -1;
+			/*
+			 * Check which type of sensor is connected and get data accordingly.
+			 */
 			switch (rawData.sensorType) {
 			case WF_BIKE_POWER_TYPE_UNIDENTIFIED:
 				Log.d(TAG, "PowerSensor.getPower - unidentified");
@@ -33,23 +38,33 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 			case WF_BIKE_POWER_TYPE_CTF:
 				Log.d(TAG, "PowerSensor.getPower - crank torque frequency");
 				WFBikePowerCTFData ctfdata = rawData.crankTorqueFreqData;
+				timestamp = ctfdata.timestamp;
+				newPower = ctfdata.averagePower;
 				break;
 			case WF_BIKE_POWER_TYPE_CRANK_TORQUE:
 				Log.d(TAG, "PowerSensor.getPower - crank torque");
 				WFBikePowerCrankTorqueData ctdata = rawData.crankTorqueData;
+				timestamp = ctdata.accumulatedCrankTicks;
+				newPower = ctdata.averagePower;
 				break;
 			case WF_BIKE_POWER_TYPE_WHEEL_TORQUE:
 				Log.d(TAG, "PowerSensor.getPower - wheel torque");
 				WFBikePowerWheelTorqueData wtdata = rawData.wheelTorqueData;
+				timestamp = wtdata.accumulatedWheelTicks;
+				newPower = wtdata.averagePower;
 				break;
 			case WF_BIKE_POWER_TYPE_POWER_ONLY:
 				Log.d(TAG, "PowerSensor.getPower - power only");
 				WFBikePowerPowerOnlyData powerdata = rawData.powerOnlyData;
+				timestamp = powerdata.eventCount;
+				newPower = powerdata.averagePower;
 			default:
 				break;
 			}
-			if (false) {
-				Log.e(TAG, "PowerSensor.getPower - false is true, we're screwed!");
+			if (timestamp != mPreviousSampleTime) {
+				power = (int) newPower;
+				mPreviousSampleTime = timestamp;
+				mDeadSamples = 0;
 			} else {
 				deadSample();
 			}
