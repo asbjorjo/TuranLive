@@ -127,6 +127,8 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 				Log.d(TAG, "PowerSensor.getCadence - last power sapmle was good");
 				cadence = (int) newCadence;
 			}
+		} else {
+			Log.w(TAG, "PowerSensor.getCadence - no sensor");
 		}
 		
 		return cadence;

@@ -1,6 +1,7 @@
 package no.turan.live.android;
 
 
+import static no.turan.live.Constants.MIN_GPS_ACCURACY;
 import static no.turan.live.Constants.SAMPLE_ALTITUDE_KEY;
 import static no.turan.live.Constants.SAMPLE_EXERCISE_KEY;
 import static no.turan.live.Constants.SAMPLE_LATITUDE_KEY;
@@ -308,12 +309,16 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.d(TAG, "CollectorService.onLocationChanged - " + location.toString());
-		sampleIntent.putExtra(SAMPLE_LATITUDE_KEY, location.getLatitude());
-		sampleIntent.putExtra(SAMPLE_LONGITUDE_KEY, location.getLongitude());
-		if (location.hasAltitude()) {
-			sampleIntent.putExtra(SAMPLE_ALTITUDE_KEY, location.getAltitude());
+		if (location.hasAccuracy() && location.getAccuracy() < MIN_GPS_ACCURACY) {
+			sampleIntent.putExtra(SAMPLE_LATITUDE_KEY, location.getLatitude());
+			sampleIntent.putExtra(SAMPLE_LONGITUDE_KEY, location.getLongitude());
+			if (location.hasAltitude()) {
+				sampleIntent.putExtra(SAMPLE_ALTITUDE_KEY, location.getAltitude());
+			}
+			if (location.hasSpeed()) {
+				sampleIntent.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed());
+			}
 		}
-		sampleIntent.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed());
 	}
 
 	@Override

@@ -18,6 +18,7 @@ public abstract class Constants {
 	public static final String SAMPLE_LATITUDE_KEY = "no.turan.live.android.LATITUDE";
 	public static final String SAMPLE_LONGITUDE_KEY = "no.turan.live.android.LONGITUDE";
 	
+	public static final float MIN_GPS_ACCURACY = 20f;
 	/**	
 	 * This is an abstract utility class.
 	 */
