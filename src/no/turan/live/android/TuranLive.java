@@ -82,11 +82,13 @@ public class TuranLive extends Activity {
 
 	protected void updateDisplay(Bundle values) {
 		Log.d(TAG, "updateDisplay");
+		//SharedPreferences preferences = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
 		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		boolean hrOn = preferences.getBoolean("hr_enabled", false);
-		boolean speedOn = preferences.getBoolean("speed_enabled", false);
-		boolean cadenceOn = preferences.getBoolean("cadence_enabled", false);
-		boolean powerOn = preferences.getBoolean("power_enabled", false);
+		Log.d(TAG, preferences.toString());
+		boolean hrOn = preferences.getBoolean("hr_enable", false);
+		boolean speedOn = preferences.getBoolean("speed_enable", false);
+		boolean cadenceOn = preferences.getBoolean("cadence_enable", false);
+		boolean powerOn = preferences.getBoolean("power_enable", false);
 		
 		int hr = values.getInt(SAMPLE_HR_KEY, -1);
 		int speed = values.getInt(SAMPLE_SPEED_KEY, -1);
@@ -133,7 +135,6 @@ public class TuranLive extends Activity {
         super.onCreate(savedInstanceState);
 
         Log.d(TAG, "onCreate");
-        
         //SharedPreferences settings = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
 
     	String antStatus = "";

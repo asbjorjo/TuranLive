@@ -8,6 +8,7 @@ import static no.turan.live.android.Constants.SAMPLE_EXERCISE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_LATITUDE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_LONGITUDE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_TIME_KEY;
+import static no.turan.live.android.Constants.SETTINGS_NAME;
 import static no.turan.live.android.Constants.TAG;
 import no.turan.live.android.sensors.HRSensor;
 import no.turan.live.android.sensors.ICadenceSensor;
@@ -257,11 +258,14 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	}
 	
 	private void connectSensors() {
+		//SharedPreferences preferences = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
 		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		boolean hrOn = preferences.getBoolean("hr_enabled", false);
-		boolean speedOn = preferences.getBoolean("speed_enabled", false);
-		boolean cadenceOn = preferences.getBoolean("cadence_enabled", false);
-		boolean powerOn = preferences.getBoolean("power_enabled", false);
+		Log.d(TAG, preferences.toString());
+		Log.d(TAG, preferences.getAll().toString());
+		boolean hrOn = preferences.getBoolean("hr_enable", false);
+		boolean speedOn = preferences.getBoolean("speed_enable", false);
+		boolean cadenceOn = preferences.getBoolean("cadence_enable", false);
+		boolean powerOn = preferences.getBoolean("power_enable", false);
 
 		if (hrOn) {
 			hrSensor = new HRSensor();
@@ -340,8 +344,11 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.d(TAG, "CollectorService.onLocationChanged - " + location.toString());
+		//SharedPreferences preferences = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
 		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		boolean speedOn = preferences.getBoolean("speed_enabled", false);
+		Log.d(TAG, preferences.toString());
+		
+		boolean speedOn = preferences.getBoolean("speed_enable", false);
 		
 		if (location.hasAccuracy() && location.getAccuracy() < MIN_GPS_ACCURACY) {
 			sampleIntent.putExtra(SAMPLE_LATITUDE_KEY, location.getLatitude());
