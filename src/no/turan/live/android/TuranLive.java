@@ -4,6 +4,7 @@ import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
 import static no.turan.live.android.Constants.SAMPLE_POWER_KEY;
 import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
+import static no.turan.live.android.Constants.SETTINGS_NAME;
 import static no.turan.live.android.Constants.TAG;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -14,20 +15,20 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.TextView.BufferType;
 
 public class TuranLive extends Activity {
 	ICollectorService mCollector;
@@ -81,6 +82,12 @@ public class TuranLive extends Activity {
 
 	protected void updateDisplay(Bundle values) {
 		Log.d(TAG, "updateDisplay");
+		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean hrOn = preferences.getBoolean("hr_enabled", false);
+		boolean speedOn = preferences.getBoolean("speed_enabled", false);
+		boolean cadenceOn = preferences.getBoolean("cadence_enabled", false);
+		boolean powerOn = preferences.getBoolean("power_enabled", false);
+		
 		int hr = values.getInt(SAMPLE_HR_KEY, -1);
 		int speed = values.getInt(SAMPLE_SPEED_KEY, -1);
 		int cadence = values.getInt(SAMPLE_CADENCE_KEY, -1);
@@ -88,25 +95,25 @@ public class TuranLive extends Activity {
 		
 		TextView textView;
 		textView = (TextView) findViewById(R.id.displayHR);
-		if (hr>=0) {
+		if (hrOn && hr>=0) {
 			textView.setText(Integer.toString(hr));
 		} else  {
 			textView.setText("HR");
 		}
 		textView = (TextView) findViewById(R.id.displaySpeed);
-		if (speed>=0) {
+		if (speedOn && speed>=0) {
 			textView.setText(Integer.toString(speed));
 		} else {
 			textView.setText("Speed");
 		}
 		textView = (TextView) findViewById(R.id.displayCadence);
-		if (cadence >= 0) {
+		if (cadenceOn && cadence >= 0) {
 			textView.setText(Integer.toString(cadence));
 		} else {
 			textView.setText("Cadence");
 		}
 		textView = (TextView) findViewById(R.id.displayPower);
-		if (power >= 0) {
+		if (powerOn && power >= 0) {
 			textView.setText(Integer.toString(power));
 		} else {
 			textView.setText("Power");
@@ -126,6 +133,8 @@ public class TuranLive extends Activity {
         super.onCreate(savedInstanceState);
 
         Log.d(TAG, "onCreate");
+        
+        //SharedPreferences settings = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
 
     	String antStatus = "";
 
@@ -246,6 +255,9 @@ public class TuranLive extends Activity {
 	@Override
 	public boolean onMenuItemSelected(int featureId, MenuItem item) {
 		switch(item.getItemId()) {
+		case R.id.preference_menu:
+			startActivity(new Intent(this, TuranPreferences.class));
+			return true;
 		default:
 			return super.onMenuItemSelected(featureId, item);
 		}
@@ -259,6 +271,10 @@ public class TuranLive extends Activity {
 			unbindService(mCollectorConnection);
 			mCollectorBound = false;
 		}
+		
+		//SharedPreferences settings = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
+		//SharedPreferences.Editor editor = settings.edit();
+		//editor.commit();
 	}
 
 	@Override

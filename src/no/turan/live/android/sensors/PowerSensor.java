@@ -148,7 +148,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 	}
 
 	@Override
-	protected void connectSensor() {
+	public void connectSensor() {
 		super.connectSensor();
 		if (mSensor != null && mSensor.isConnected()) {
 			WFBikePowerConnection bpc = (WFBikePowerConnection) mSensor;

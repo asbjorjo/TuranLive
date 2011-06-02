@@ -5,7 +5,7 @@ public abstract class Constants {
 	 * Used by log statements.
 	 */
 	public static final String TAG = "TuranLive";
-	public static final int DEAD_SAMPLE_THRESHOLD = 10;
+	public static final String SETTINGS_NAME = "TuranLive";
 	
 	public static final String SAMPLE_TIME_KEY = "no.turan.live.android.TIME";
 	public static final String SAMPLE_EXERCISE_KEY = "no.turan.live.android.EXERCISE";
@@ -17,6 +17,7 @@ public abstract class Constants {
 	public static final String SAMPLE_LATITUDE_KEY = "no.turan.live.android.LATITUDE";
 	public static final String SAMPLE_LONGITUDE_KEY = "no.turan.live.android.LONGITUDE";
 	
+	public static final int DEAD_SAMPLE_THRESHOLD = 10;
 	public static final float MIN_GPS_ACCURACY = 20f;
 	public static final float MPS_TO_KPH = 3.6f;
 	

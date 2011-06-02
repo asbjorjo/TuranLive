@@ -18,9 +18,9 @@
         </activity>
         <uses-library></uses-library>
         <activity android:name="SensorSetup"></activity>
-		<activity android:name="PairHRSensor"></activity>
+		<activity android:name="TuranPreferences"></activity>
 		<service android:name="CollectorService"></service>
-		<service android:name="UploadService"></service>
+		<service android:name="TuranUploadService"></service>
 
     </application>
 </manifest>

@@ -7,6 +7,7 @@ import com.wahoofitness.api.comm.WFSensorConnection;
 
 public interface ISensor extends WFSensorConnection.Callback {
 	public int getSensorId();
+	public void disconnectSensor();
 	public void setupSensor(WFHardwareConnector hardwareConnector);
 	public void retrieveData(Intent intent);
 }

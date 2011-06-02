@@ -15,17 +15,20 @@ import no.turan.live.android.sensors.IHRSensor;
 import no.turan.live.android.sensors.IPowerSensor;
 import no.turan.live.android.sensors.ISpeedSensor;
 import no.turan.live.android.sensors.PowerSensor;
+import no.turan.live.android.sensors.SpeedCadenceSensor;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -86,7 +89,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 				Log.d(TAG, "CollectorService.hwConnHasData - sample for processing");
 				Log.v(TAG, "CollectorSerivce.hwConnHasData - " + sampleIntent.getExtras().toString());
 				if (mLive) {
-					Intent uploadIntent = new Intent(this, UploadService.class);
+					Intent uploadIntent = new Intent(this, TuranUploadService.class);
 					uploadIntent.putExtras(sampleIntent.getExtras());
 					startService(uploadIntent);
 				}
@@ -145,7 +148,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		case WF_HARDWARE_STATE_READY:
         	Log.d(TAG,"CollectorService.hwConnStateChanged - ANT OK");
         	antStatus = "Ready";
-        	setupSensors();
+        	connectSensors();
         	break;
 		default:
         	Log.d(TAG,"CollectorService.hwConnStateChanged - " + state.name());
@@ -159,12 +162,10 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 
 	@Override
 	public void onDestroy() {
+		super.onDestroy();
 		Log.d(TAG, "CollectorService.onDestroy");
 
-		hrSensor = null;
-		powerSensor = null;
-		cadenceSensor = null;
-		speedSensor = null;
+		disconnectSensors();
 		
 		if (mHardwareConnector != null) {
 			mHardwareConnector.destroy();
@@ -176,14 +177,13 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		
 		mLive = false;
 		mCollecting = false;
+		mExerciseId = 0;
 		
 		Intent antState = new Intent("no.turan.live.android.ANT_STATE");
 		antState.putExtra("no.turan.live.android.ANT_STATE", "Disconnected");
 		Intent startedIntent = new Intent("no.turan.live.android.COLLECTOR_STOPPED");
 		sendBroadcast(startedIntent);
 		sendBroadcast(antState);
-		
-		super.onDestroy();
 	}
 
 	/* (non-Javadoc)
@@ -194,7 +194,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		super.onCreate();
 		Log.d(TAG, "CollectorService.onCreate");
 		
-		sampleIntent = new Intent(this, UploadService.class);
+		sampleIntent = new Intent(this, TuranUploadService.class);
 		sampleTime = System.currentTimeMillis()/1000L;
 		
     	mLive = false;
@@ -256,13 +256,43 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		return START_STICKY;
 	}
 	
-	private void setupSensors() {
-		hrSensor = new HRSensor();
-		hrSensor.setupSensor(mHardwareConnector);
-		PowerSensor power = new PowerSensor();
-		power.setupSensor(mHardwareConnector);
-		powerSensor = power;
-		cadenceSensor = power;
+	private void connectSensors() {
+		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean hrOn = preferences.getBoolean("hr_enabled", false);
+		boolean speedOn = preferences.getBoolean("speed_enabled", false);
+		boolean cadenceOn = preferences.getBoolean("cadence_enabled", false);
+		boolean powerOn = preferences.getBoolean("power_enabled", false);
+
+		if (hrOn) {
+			hrSensor = new HRSensor();
+			hrSensor.setupSensor(mHardwareConnector);
+		}
+		if (powerOn) {
+			powerSensor = new PowerSensor();
+			powerSensor.setupSensor(mHardwareConnector);
+			if (!cadenceOn) {
+				cadenceSensor = (ICadenceSensor) powerSensor;
+			}
+		}
+	}
+
+	private void disconnectSensors() {
+		if (hrSensor!=null) {
+			hrSensor.disconnectSensor();
+			hrSensor = null;
+		}
+		if (powerSensor!=null) {
+			powerSensor.disconnectSensor();
+			powerSensor = null;
+		}
+		if (cadenceSensor!=null) {
+			cadenceSensor.disconnectSensor();
+			cadenceSensor = null;
+		}
+		if (speedSensor!=null) {
+			speedSensor.disconnectSensor();
+			speedSensor = null;
+		}
 	}
 
 	public class CollectorBinder extends Binder implements ICollectorService {
@@ -310,13 +340,16 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.d(TAG, "CollectorService.onLocationChanged - " + location.toString());
+		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean speedOn = preferences.getBoolean("speed_enabled", false);
+		
 		if (location.hasAccuracy() && location.getAccuracy() < MIN_GPS_ACCURACY) {
 			sampleIntent.putExtra(SAMPLE_LATITUDE_KEY, location.getLatitude());
 			sampleIntent.putExtra(SAMPLE_LONGITUDE_KEY, location.getLongitude());
 			if (location.hasAltitude()) {
 				sampleIntent.putExtra(SAMPLE_ALTITUDE_KEY, location.getAltitude());
 			}
-			if (location.hasSpeed()) {
+			if (!speedOn && location.hasSpeed()) {
 				sampleIntent.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed() * MPS_TO_KPH);
 			}
 		}

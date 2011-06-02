@@ -45,7 +45,7 @@ public abstract class Sensor implements ISensor {
 		connectSensor();
 	}
 	
-	protected void connectSensor() {
+	public void connectSensor() {
 		Log.d(TAG, "Sensor.connectSensor - " + mSensorType);
 		if (mHardwareConnector != null) {
 			if (mSensor != null) {
@@ -77,7 +77,7 @@ public abstract class Sensor implements ISensor {
 		}
 	}
 
-	protected void disconnectSensor() {
+	public void disconnectSensor() {
 		if (mSensor != null) {
 			Log.d(TAG, "Sensor.disconnectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber());
 			switch (mSensor.getConnectionStatus())
