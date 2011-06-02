@@ -6,7 +6,6 @@ public abstract class Constants {
 	 */
 	public static final String TAG = "TuranLive";
 	public static final int DEAD_SAMPLE_THRESHOLD = 10;
-	public static final Integer EXERCISE_ID = 4722;
 	
 	public static final String SAMPLE_TIME_KEY = "no.turan.live.android.TIME";
 	public static final String SAMPLE_EXERCISE_KEY = "no.turan.live.android.EXERCISE";
@@ -20,6 +19,21 @@ public abstract class Constants {
 	
 	public static final float MIN_GPS_ACCURACY = 20f;
 	public static final float MPS_TO_KPH = 3.6f;
+	
+	public enum ExerciseState{
+		FINISHED ('F'),
+		PAUSED   ('P'),
+		LIVE     ('L');
+		
+		private final char flag_;
+		ExerciseState(char flag) {
+			flag_ = flag;
+		}
+		
+		public char getFlag() {
+			return flag_;
+		}
+	}
 	/**	
 	 * This is an abstract utility class.
 	 */

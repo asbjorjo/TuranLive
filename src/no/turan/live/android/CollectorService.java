@@ -1,7 +1,6 @@
 package no.turan.live.android;
 
 
-import static no.turan.live.android.Constants.EXERCISE_ID;
 import static no.turan.live.android.Constants.MIN_GPS_ACCURACY;
 import static no.turan.live.android.Constants.MPS_TO_KPH;
 import static no.turan.live.android.Constants.SAMPLE_ALTITUDE_KEY;
@@ -50,6 +49,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private boolean mCollecting;
 	private long sampleTime;
 	private Intent sampleIntent;
+	private int mExerciseId;
 
 	@Override
 	public void hwConnAntError(WFAntError error) {
@@ -96,7 +96,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 			sampleTime = System.currentTimeMillis()/1000L;
 			sampleIntent = new Intent("no.turan.live.android.SAMPLE");
 			sampleIntent.putExtra(SAMPLE_TIME_KEY, sampleTime);
-			sampleIntent.putExtra(SAMPLE_EXERCISE_KEY, EXERCISE_ID);
+			sampleIntent.putExtra(SAMPLE_EXERCISE_KEY, mExerciseId);
 		}
 		
 		if (hrSensor != null) {
@@ -273,9 +273,12 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		}
 
 		@Override
-		public void goLive() {
+		public void goLive(int exerciseId) {
 			Log.d(TAG, "CollectorBinder.goLive");
-			mLive = true;
+			if (exerciseId > 0) {
+				mExerciseId = exerciseId;
+				mLive = true;
+			}
 		}
 
 		@Override

@@ -16,13 +16,18 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.text.InputType;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnKeyListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.TextView.BufferType;
 
 public class TuranLive extends Activity {
 	ICollectorService mCollector;
@@ -166,13 +171,18 @@ public class TuranLive extends Activity {
     	Log.d(TAG, "updateMain");
     	Button start = (Button) findViewById(R.id.antCollect);
     	Button live  = (Button) findViewById(R.id.goLive);
+    	EditText exercise = (EditText) findViewById(R.id.exerciseIdBox);
     	
     	if (mCollectorBound && mCollector.isCollecting()) {
 			start.setText(R.string.stop);
 
 			if (mCollector.isLive()) {
+				exercise.setInputType(InputType.TYPE_NULL);
+				exercise.setEnabled(false);
 				live.setText(R.string.go_off);
 			} else {
+				exercise.setInputType(InputType.TYPE_CLASS_NUMBER);
+				exercise.setEnabled(true);
 				live.setText(R.string.go_live);
 			}
 			live.setEnabled(true);
@@ -180,6 +190,8 @@ public class TuranLive extends Activity {
     		start.setText(R.string.start);
     		live.setText(R.string.go_live);
     		live.setEnabled(false);
+    		exercise.setInputType(InputType.TYPE_CLASS_NUMBER);
+			exercise.setEnabled(true);
     	}
     }
     
@@ -200,7 +212,7 @@ public class TuranLive extends Activity {
     		stopService(new Intent(this, CollectorService.class));
     		bindService(service, mCollectorConnection, BIND_AUTO_CREATE);
         } else {
-    		startService(service);
+        	startService(service);
     		bindService(service, mCollectorConnection, Context.BIND_AUTO_CREATE);
     	}
     }
@@ -211,7 +223,9 @@ public class TuranLive extends Activity {
     	if (mCollector.isLive()) {
     		mCollector.goOff();
     	} else {
-    		mCollector.goLive();
+    		EditText exerciseIdBox = (EditText) findViewById(R.id.exerciseIdBox);
+        	int exerciseId = Integer.parseInt(exerciseIdBox.getText().toString());
+        	mCollector.goLive(exerciseId);
     	}
     	updateMain();
     }
