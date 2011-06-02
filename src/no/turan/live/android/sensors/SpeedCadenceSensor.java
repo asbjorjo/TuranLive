@@ -4,13 +4,11 @@ import static no.turan.live.android.Constants.DEAD_SAMPLE_THRESHOLD;
 import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
 import static no.turan.live.android.Constants.TAG;
-import no.turan.live.android.Constants;
 import android.content.Intent;
 import android.util.Log;
 
 import com.wahoofitness.api.WFHardwareConnectorTypes.WFSensorType;
 import com.wahoofitness.api.data.WFBikeSpeedCadenceData;
-import com.wahoofitness.api.data.WFHeartrateData;
 
 public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 		ISpeedSensor {
