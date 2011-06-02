@@ -1,4 +1,4 @@
-package no.turan.live;
+package no.turan.live.android;
 
 public abstract class Constants {
 	/**

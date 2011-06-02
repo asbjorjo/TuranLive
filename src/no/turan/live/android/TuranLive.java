@@ -1,11 +1,10 @@
 package no.turan.live.android;
 
-import static no.turan.live.Constants.SAMPLE_CADENCE_KEY;
-import static no.turan.live.Constants.SAMPLE_HR_KEY;
-import static no.turan.live.Constants.SAMPLE_POWER_KEY;
-import static no.turan.live.Constants.SAMPLE_SPEED_KEY;
-import static no.turan.live.Constants.TAG;
-import no.turan.live.Constants;
+import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
+import static no.turan.live.android.Constants.SAMPLE_POWER_KEY;
+import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
+import static no.turan.live.android.Constants.TAG;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;

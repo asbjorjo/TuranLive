@@ -1,10 +1,10 @@
 package no.turan.live.android.sensors;
 
-import static no.turan.live.Constants.DEAD_SAMPLE_THRESHOLD;
-import static no.turan.live.Constants.SAMPLE_CADENCE_KEY;
-import static no.turan.live.Constants.SAMPLE_SPEED_KEY;
-import static no.turan.live.Constants.TAG;
-import no.turan.live.Constants;
+import static no.turan.live.android.Constants.DEAD_SAMPLE_THRESHOLD;
+import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
+import static no.turan.live.android.Constants.TAG;
+import no.turan.live.android.Constants;
 import android.content.Intent;
 import android.util.Log;
 

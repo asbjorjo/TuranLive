@@ -1,20 +1,19 @@
 package no.turan.live.android;
 
-import static no.turan.live.Constants.SAMPLE_ALTITUDE_KEY;
-import static no.turan.live.Constants.SAMPLE_CADENCE_KEY;
-import static no.turan.live.Constants.SAMPLE_EXERCISE_KEY;
-import static no.turan.live.Constants.SAMPLE_HR_KEY;
-import static no.turan.live.Constants.SAMPLE_LATITUDE_KEY;
-import static no.turan.live.Constants.SAMPLE_LONGITUDE_KEY;
-import static no.turan.live.Constants.SAMPLE_POWER_KEY;
-import static no.turan.live.Constants.SAMPLE_SPEED_KEY;
-import static no.turan.live.Constants.SAMPLE_TIME_KEY;
-import static no.turan.live.Constants.TAG;
+import static no.turan.live.android.Constants.SAMPLE_ALTITUDE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_EXERCISE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
+import static no.turan.live.android.Constants.SAMPLE_LATITUDE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_LONGITUDE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_POWER_KEY;
+import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
+import static no.turan.live.android.Constants.SAMPLE_TIME_KEY;
+import static no.turan.live.android.Constants.TAG;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-import no.turan.live.Constants;
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;

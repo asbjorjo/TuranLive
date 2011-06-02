@@ -1,7 +1,7 @@
 package no.turan.live.android.sensors;
 
-import static no.turan.live.Constants.TAG;
-import static no.turan.live.Constants.DEAD_SAMPLE_THRESHOLD;
+import static no.turan.live.android.Constants.DEAD_SAMPLE_THRESHOLD;
+import static no.turan.live.android.Constants.TAG;
 import android.util.Log;
 
 import com.wahoofitness.api.WFHardwareConnector;
