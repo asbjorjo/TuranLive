@@ -15,7 +15,6 @@ public abstract class Sensor implements ISensor {
 	protected short mSensorType;
 	protected int mDeadSamples = 0;
 	protected long mPreviousSampleTime = 0;
-	protected int mConnectionAttempts = 10;
 	
 	protected Sensor(short sensorType) {
 		mSensorType = sensorType;
@@ -36,6 +35,7 @@ public abstract class Sensor implements ISensor {
 			Log.d(TAG, "Sensor.connectionStateChanged - " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber() + " - invalid");
 			mSensor.setCallback(null);
 			mSensor = null;
+			connectSensor();
 		}
 	}
 	
@@ -49,40 +49,27 @@ public abstract class Sensor implements ISensor {
 		Log.d(TAG, "Sensor.connectSensor - " + mSensorType);
 		if (mHardwareConnector != null) {
 			if (mSensor != null) {
+				Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber() + " - " + mSensor.getConnectionStatus());
 				switch (mSensor.getConnectionStatus())
 				{
 					case WF_SENSOR_CONNECTION_STATUS_CONNECTED:
-						Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber() + " - connected");
 					case WF_SENSOR_CONNECTION_STATUS_CONNECTING:
-						Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber() + " - connectimg");
-						// Good states, do nothing.
 						break;
 					case WF_SENSOR_CONNECTION_STATUS_DISCONNECTING:
-						Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber() +  " - disconnecting");
 					case WF_SENSOR_CONNECTION_STATUS_IDLE:
-						Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber() + " - idle");
-						{
-							// Bad states, reconnect.
-							WFConnectionParams params = new WFConnectionParams();
-							params.sensorType = mSensorType;
-							mSensor = mHardwareConnector.initSensorConnection(params);
-							if (mSensor != null) {
-								mSensor.setCallback(this);
-						} else {
-							Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor");
-						}
+						mSensor = null;
 						break;
-					}
 				}
-			} else {
-				Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor");
+			}
+			if (mSensor == null) {
+				Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor defined");
 				WFConnectionParams params = new WFConnectionParams();
 				params.sensorType = mSensorType;
 				mSensor = mHardwareConnector.initSensorConnection(params);
 				if (mSensor != null) {
 					mSensor.setCallback(this);
 				} else {
-					Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor");
+					Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor found");
 				}
 			}
 		} else {
@@ -91,20 +78,24 @@ public abstract class Sensor implements ISensor {
 	}
 
 	protected void disconnectSensor() {
-		Log.d(TAG, "Sensor.disconnectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber());
-		switch (mSensor.getConnectionStatus())
-		{
-			case WF_SENSOR_CONNECTION_STATUS_IDLE:
-				if (mSensor != null) {
-					mSensor.setCallback(null);
-					mSensor = null;
+		if (mSensor != null) {
+			Log.d(TAG, "Sensor.disconnectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber());
+			switch (mSensor.getConnectionStatus())
+			{
+				case WF_SENSOR_CONNECTION_STATUS_IDLE:
+					if (mSensor != null) {
+						mSensor.setCallback(null);
+						mSensor = null;
+						break;
+					}
+				case WF_SENSOR_CONNECTION_STATUS_DISCONNECTING:
+				case WF_SENSOR_CONNECTION_STATUS_CONNECTED:
+				case WF_SENSOR_CONNECTION_STATUS_CONNECTING:
+					mSensor.disconnect();
 					break;
-				}
-			case WF_SENSOR_CONNECTION_STATUS_DISCONNECTING:
-			case WF_SENSOR_CONNECTION_STATUS_CONNECTED:
-			case WF_SENSOR_CONNECTION_STATUS_CONNECTING:
-				mSensor.disconnect();
-				break;
+			}
+		} else {
+			Log.d(TAG, "Sensor.disconnectSensor - " + mSensorType + " - no sensor");
 		}
 	}
 

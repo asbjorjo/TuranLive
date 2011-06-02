@@ -17,7 +17,7 @@ public class HRSensor extends Sensor implements IHRSensor {
 	
 	@Override
 	public int getHR() {
-		Log.v(TAG, "HRSensor.getValue");
+		Log.v(TAG, "HRSensor.getHR");
 		int hr = -1;
 		
 		if (mSensor != null && mSensor.isConnected()) {
@@ -25,8 +25,11 @@ public class HRSensor extends Sensor implements IHRSensor {
 			WFHeartrateData data = (WFHeartrateData) mSensor.getData();
 			
 			Log.i(TAG, "HRSensor.getHR - " + data.timestamp + " - " + data.computedHeartrate);
-			
-			if (data.timestamp != mPreviousSampleTime) {
+
+			if (data.timestamp == 0) {
+				Log.d(TAG, "HRSensor.getHR - null time");
+				deadSample();
+			} else if (data.timestamp != mPreviousSampleTime) {
 				Log.d(TAG, "HRSensor.getHR - good data");
 				hr = data.computedHeartrate;
 				mPreviousSampleTime = data.timestamp;
@@ -40,7 +43,6 @@ public class HRSensor extends Sensor implements IHRSensor {
 			}
 		} else {
 			Log.w(TAG, "HRSensor.getHR - no HRSensor");
-			connectSensor();
 		}
 		return hr;
 	}

@@ -1,6 +1,11 @@
 package no.turan.live.android;
 
+import static no.turan.live.Constants.SAMPLE_CADENCE_KEY;
+import static no.turan.live.Constants.SAMPLE_HR_KEY;
+import static no.turan.live.Constants.SAMPLE_POWER_KEY;
+import static no.turan.live.Constants.SAMPLE_SPEED_KEY;
 import static no.turan.live.Constants.TAG;
+import no.turan.live.Constants;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.BroadcastReceiver;
@@ -44,9 +49,19 @@ public class TuranLive extends Activity {
 	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
+			Log.d(TAG, intent.getAction());
 			if (intent.getAction().equals("no.turan.live.android.COLLECTOR_STARTED")) {
-				Log.d(TAG, "no.turan.live.android.COLLECTOR_STARTED");
 				updateMain();
+			} else if (intent.getAction().equals("no.turan.live.android.COLLECTOR_STOPPED")) {
+				updateDisplay(new Bundle());
+				updateMain();
+			} else if (intent.getAction().equals("no.turan.live.android.SAMPLE")) {
+				Bundle sample = new Bundle();
+				sample.putAll(intent.getExtras());
+				updateDisplay(sample);
+			} else if (intent.getAction().equals("no.turan.live.android.ANT_STATE")) {
+				TextView antStatus = (TextView) findViewById(R.id.antStatus);
+				antStatus.setText(intent.getStringExtra("no.turan.live.android.ANT_STATE_KEY"));
 			}
 		}
 	};
@@ -58,6 +73,39 @@ public class TuranLive extends Activity {
 
 		Intent intent = new Intent(this, CollectorService.class);
 		bindService(intent, mCollectorConnection, Context.BIND_AUTO_CREATE);
+	}
+
+	protected void updateDisplay(Bundle values) {
+		int hr = values.getInt(SAMPLE_HR_KEY, -1);
+		int speed = values.getInt(SAMPLE_SPEED_KEY, -1);
+		int cadence = values.getInt(SAMPLE_CADENCE_KEY, -1);
+		int power = values.getInt(SAMPLE_POWER_KEY, -1);
+		
+		TextView textView;
+		textView = (TextView) findViewById(R.id.displayHR);
+		if (hr>=0) {
+			textView.setText(Integer.toString(hr));
+		} else  {
+			textView.setText("HR");
+		}
+		textView = (TextView) findViewById(R.id.displaySpeed);
+		if (speed>=0) {
+			textView.setText(Integer.toString(speed));
+		} else {
+			textView.setText("Speed");
+		}
+		textView = (TextView) findViewById(R.id.displayCadence);
+		if (cadence >= 0) {
+			textView.setText(Integer.toString(cadence));
+		} else {
+			textView.setText("Cadence");
+		}
+		textView = (TextView) findViewById(R.id.displayPower);
+		if (power >= 0) {
+			textView.setText(Integer.toString(power));
+		} else {
+			textView.setText("Power");
+		}
 	}
 
 	@Override
@@ -79,6 +127,9 @@ public class TuranLive extends Activity {
         if(!this.isFinishing())
         {
         	IntentFilter filter = new IntentFilter("no.turan.live.android.COLLECTOR_STARTED");
+        	filter.addAction("no.turan.live.android.SAMPLE");
+        	filter.addAction("no.turan.live.android.ANT_STATE");
+        	filter.addAction("no.turan.live.android.COLLECTOR_STOPPED");
         	registerReceiver(broadcastReceiver, filter);
             setContentView(R.layout.main);
             ((TextView)findViewById(R.id.antStatus)).setText(antStatus);

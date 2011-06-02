@@ -18,6 +18,7 @@ import no.turan.live.android.sensors.PowerSensor;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
@@ -27,6 +28,7 @@ import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.wahoofitness.api.WFAntException;
@@ -62,7 +64,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 
 	@Override
 	public void hwConnConnectedSensor(WFSensorConnection connection) {
-		Log.d(TAG, "CollectorService.hwConnConnectedSensor" + connection.getSensorType() + " - " + connection.getDeviceNumber());
+		Log.d(TAG, "CollectorService.hwConnConnectedSensor - " + connection.getSensorType() + " - " + connection.getDeviceNumber());
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 
 	@Override
 	public void hwConnDisconnectedSensor(WFSensorConnection connection) {
-		Log.d(TAG, "CollectorService.hwConnDisconnectedSensor" + connection.getSensorType() + " - " + connection.getDeviceNumber());
+		Log.d(TAG, "CollectorService.hwConnDisconnectedSensor - " + connection.getSensorType() + " - " + connection.getDeviceNumber());
 	}
 
 	@Override
@@ -85,12 +87,15 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 				Log.d(TAG, "CollectorService.hwConnHasData - sample for processing");
 				Log.v(TAG, "CollectorSerivce.hwConnHasData - " + sampleIntent.getExtras().toString());
 				if (mLive) {
-					startService(sampleIntent);
+					Intent uploadIntent = new Intent(this, UploadService.class);
+					uploadIntent.putExtras(sampleIntent.getExtras());
+					startService(uploadIntent);
 				}
+				sendBroadcast(sampleIntent);
 			}
 
 			sampleTime = System.currentTimeMillis()/1000L;
-			sampleIntent = new Intent(this, UploadService.class);
+			sampleIntent = new Intent("no.turan.live.android.SAMPLE");
 			sampleIntent.putExtra(SAMPLE_TIME_KEY, sampleTime);
 			sampleIntent.putExtra(SAMPLE_EXERCISE_KEY, EXERCISE_ID);
 		}
@@ -115,31 +120,42 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 
 	@Override
 	public void hwConnStateChanged(WFHardwareState state) {
+		String antStatus = "";
 		switch (state) {
 		case WF_HARDWARE_STATE_DISABLED:
         	if (WFHardwareConnector.hasAntSupport(this)) {
         		Log.d(TAG,"CollectorService.hwConnStateChanged - HW Connector DISABLED.");
+        		antStatus = "DISABLED";
         	}
         	else {
         		Log.d(TAG,"CollectorService.hwConnStateChanged - ANT Radio NOT supported.");
+        		antStatus = "Not Supported";
         	}
 			break;
 			
 		case WF_HARDWARE_STATE_SERVICE_NOT_INSTALLED:
         	Log.d(TAG,"CollectorService.hwConnStateChanged - ANT Radio Service NOT installed.");
+        	antStatus = "Not Installed";
 			break;
 			
 		case WF_HARDWARE_STATE_SUSPENDED:
         	Log.d(TAG,"CollectorService.hwConnStateChanged - HW Connector SUSPENDED.");
+        	antStatus = "Suspended";
         	break;
         	
 		case WF_HARDWARE_STATE_READY:
         	Log.d(TAG,"CollectorService.hwConnStateChanged - ANT OK");
+        	antStatus = "Ready";
+        	setupSensors();
         	break;
 		default:
         	Log.d(TAG,"CollectorService.hwConnStateChanged - " + state.name());
+        	antStatus = state.name();
 			break;
-	}
+		}
+		Intent antState = new Intent("no.turan.live.android.ANT_STATE");
+		antState.putExtra("no.turan.live.android.ANT_STATE_KEY", antStatus);
+		sendBroadcast(antState);
 	}
 
 	@Override
@@ -161,6 +177,13 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		
 		mLive = false;
 		mCollecting = false;
+		
+		Intent antState = new Intent("no.turan.live.android.ANT_STATE");
+		antState.putExtra("no.turan.live.android.ANT_STATE", "Disconnected");
+		Intent startedIntent = new Intent("no.turan.live.android.COLLECTOR_STOPPED");
+		sendBroadcast(startedIntent);
+		sendBroadcast(antState);
+		
 		super.onDestroy();
 	}
 
@@ -220,8 +243,6 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 			stopSelf();
 		}
 		
-		setupSensors();
-		
 		Notification notification = new Notification(R.drawable.turan, getText(R.string.app_name), System.currentTimeMillis());
 		Intent notificationIntent = new Intent(this, TuranLive.class);
 		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
@@ -239,10 +260,10 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private void setupSensors() {
 		hrSensor = new HRSensor();
 		hrSensor.setupSensor(mHardwareConnector);
-		//PowerSensor power = new PowerSensor();
-		//power.setupSensor(mHardwareConnector);
-		//powerSensor = power;
-		//cadenceSensor = power;
+		PowerSensor power = new PowerSensor();
+		power.setupSensor(mHardwareConnector);
+		powerSensor = power;
+		cadenceSensor = power;
 	}
 
 	public class CollectorBinder extends Binder implements ICollectorService {

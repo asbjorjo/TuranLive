@@ -33,7 +33,6 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 			}
 		} else {
 			Log.w(TAG, "PowerSensor.getPower - no sensor");
-			connectSensor();
 		}
 		
 		return power;

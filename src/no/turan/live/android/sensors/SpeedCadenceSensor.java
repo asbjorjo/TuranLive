@@ -42,7 +42,6 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 			}
 		} else {
 			Log.w(TAG, "SpeedCadenceSensor.getSpeed - no sensor");
-			connectSensor();
 		}
 
 		return speed;
@@ -73,7 +72,6 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 			}
 		} else {
 			Log.w(TAG, "SpeedCadenceSensor.getCadence - no sensor");
-			connectSensor();
 		}
 
 		return cadence;
