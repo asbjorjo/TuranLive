@@ -3,13 +3,17 @@ package no.turan.live.android.sensors;
 import static no.turan.live.Constants.SAMPLE_POWER_KEY;
 import static no.turan.live.Constants.TAG;
 import no.turan.live.Constants;
+import android.content.Intent;
+import android.util.Log;
 
 import com.wahoofitness.api.WFHardwareConnectorTypes.WFSensorType;
 import com.wahoofitness.api.comm.WFBikePowerConnection;
+import com.wahoofitness.api.data.WFBikePowerCTFData;
+import com.wahoofitness.api.data.WFBikePowerCrankTorqueData;
 import com.wahoofitness.api.data.WFBikePowerData;
-
-import android.content.Intent;
-import android.util.Log;
+import com.wahoofitness.api.data.WFBikePowerPowerOnlyData;
+import com.wahoofitness.api.data.WFBikePowerRawData;
+import com.wahoofitness.api.data.WFBikePowerWheelTorqueData;
 
 public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor {
 	public PowerSensor() {
@@ -19,15 +23,33 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 	@Override
 	public int getPower() {
 		int power = -1;
-		
+
 		if (mSensor != null && mSensor.isConnected()) {
-			WFBikePowerData data = (WFBikePowerData) mSensor.getData();
-			Log.d(TAG, "PowerSensor.getPower - " + data.timestamp + " - " + data.ulAveragePower);
-			if (data.timestamp != mPreviousSampleTime) {
-				Log.d(TAG, "PowerSensor.getPower - good sample");
-				power = (int) data.ulAveragePower;
-				mPreviousSampleTime = data.timestamp;
-				mDeadSamples = 0;
+			WFBikePowerRawData rawData = (WFBikePowerRawData) mSensor.getRawData();
+			switch (rawData.sensorType) {
+			case WF_BIKE_POWER_TYPE_UNIDENTIFIED:
+				Log.d(TAG, "PowerSensor.getPower - unidentified");
+				break;
+			case WF_BIKE_POWER_TYPE_CTF:
+				Log.d(TAG, "PowerSensor.getPower - crank torque frequency");
+				WFBikePowerCTFData ctfdata = rawData.crankTorqueFreqData;
+				break;
+			case WF_BIKE_POWER_TYPE_CRANK_TORQUE:
+				Log.d(TAG, "PowerSensor.getPower - crank torque");
+				WFBikePowerCrankTorqueData ctdata = rawData.crankTorqueData;
+				break;
+			case WF_BIKE_POWER_TYPE_WHEEL_TORQUE:
+				Log.d(TAG, "PowerSensor.getPower - wheel torque");
+				WFBikePowerWheelTorqueData wtdata = rawData.wheelTorqueData;
+				break;
+			case WF_BIKE_POWER_TYPE_POWER_ONLY:
+				Log.d(TAG, "PowerSensor.getPower - power only");
+				WFBikePowerPowerOnlyData powerdata = rawData.powerOnlyData;
+			default:
+				break;
+			}
+			if (false) {
+				Log.e(TAG, "PowerSensor.getPower - false is true, we're screwed!");
 			} else {
 				deadSample();
 			}

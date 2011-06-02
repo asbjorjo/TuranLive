@@ -1,10 +1,12 @@
 package no.turan.live.android;
 
 import static no.turan.live.Constants.SAMPLE_ALTITUDE_KEY;
+import static no.turan.live.Constants.SAMPLE_CADENCE_KEY;
 import static no.turan.live.Constants.SAMPLE_EXERCISE_KEY;
 import static no.turan.live.Constants.SAMPLE_HR_KEY;
 import static no.turan.live.Constants.SAMPLE_LATITUDE_KEY;
 import static no.turan.live.Constants.SAMPLE_LONGITUDE_KEY;
+import static no.turan.live.Constants.SAMPLE_POWER_KEY;
 import static no.turan.live.Constants.SAMPLE_SPEED_KEY;
 import static no.turan.live.Constants.SAMPLE_TIME_KEY;
 import static no.turan.live.Constants.TAG;
@@ -42,41 +44,51 @@ public class UploadService extends IntentService {
 		JSONObject json = new JSONObject();
 		
 		Integer exerciseId = intent.getIntExtra(SAMPLE_EXERCISE_KEY, -1);
-		long TIME = intent.getLongExtra(SAMPLE_TIME_KEY, -1L);
-		int HR = intent.getIntExtra(SAMPLE_HR_KEY, -1);
-		float SPEED = intent.getFloatExtra(SAMPLE_SPEED_KEY, -1);
-		double ALTITUDE = intent.getDoubleExtra(SAMPLE_ALTITUDE_KEY, -1);
-		double LATITUDE = intent.getDoubleExtra(SAMPLE_LATITUDE_KEY, -1);
-		double LONGITUDE = intent.getDoubleExtra(SAMPLE_LONGITUDE_KEY, -1);
+		long time = intent.getLongExtra(SAMPLE_TIME_KEY, -1L);
+		int hr = intent.getIntExtra(SAMPLE_HR_KEY, -1);
+		int power = intent.getIntExtra(SAMPLE_POWER_KEY, -1);
+		int cadence = intent.getIntExtra(SAMPLE_CADENCE_KEY, -1);
+		float speed = intent.getFloatExtra(SAMPLE_SPEED_KEY, -1);
+		double altitude = intent.getDoubleExtra(SAMPLE_ALTITUDE_KEY, -1);
+		double latitude = intent.getDoubleExtra(SAMPLE_LATITUDE_KEY, -1);
+		double longitude = intent.getDoubleExtra(SAMPLE_LONGITUDE_KEY, -1);
 		
 		
 		if (intent.getExtras() != null) {
 			Log.d(TAG, intent.getExtras().toString());
 		}
 		
-		if (TIME > 0) {
+		if (time > 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good TIME");
-			addToJSON(json, Long.toString(TIME), "time");
+			addToJSON(json, time, "time");
 		}
-		if (HR >= 0) {
+		if (hr >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good HR");
-			addToJSON(json, Integer.toString(HR), "hr");
+			addToJSON(json, hr, "hr");
 		}
-		if (SPEED >= 0) {
+		if (speed >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good SPEED");
-			addToJSON(json, Float.toString(SPEED), "speed");
+			addToJSON(json, speed, "speed");
 		}
-		if (ALTITUDE >= 0) {
+		if (cadence >= 0) {
+			Log.d(TAG, "UploadService.onHandleIntent - good CADENCE");
+			addToJSON(json, cadence, "cadence");
+		}
+		if (power >= 0) {
+			Log.d(TAG, "UploadService.onHandleIntent - good POWER");
+			addToJSON(json, power, "power");
+		}
+		if (altitude >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good ALTITUDE");
-			addToJSON(json, Double.toString(ALTITUDE), "altitude");
+			addToJSON(json, altitude, "altitude");
 		}
-		if (LATITUDE >= 0) {
+		if (latitude >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good LATITUDE");
-			addToJSON(json, Double.toString(LATITUDE), "lat");
+			addToJSON(json, latitude, "lat");
 		}
-		if (LONGITUDE >= 0) {
+		if (longitude >= 0) {
 			Log.d(TAG, "UploadService.onHandleIntent - good LONGITUDE");
-			addToJSON(json, Double.toString(LONGITUDE), "lon");
+			addToJSON(json, longitude, "lon");
 		}
 		
 		jsonArray.put(json);
@@ -104,7 +116,7 @@ public class UploadService extends IntentService {
 		}
 	}
 
-	private void addToJSON(JSONObject json, String value, String key) {
+	private void addToJSON(JSONObject json, Object value, String key) {
 		try {
 			json.put(key, value);
 		} catch (JSONException e) {
