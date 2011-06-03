@@ -40,7 +40,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 			case WF_BIKE_POWER_TYPE_CTF:
 				Log.d(TAG, "PowerSensor.getPower - crank torque frequency");
 				WFBikePowerCTFData ctfdata = rawData.crankTorqueFreqData;
-				timestamp = ctfdata.timestamp;
+				timestamp = ctfdata.accumulatedCrankTicks;
 				newPower = ctfdata.averagePower;
 				break;
 			case WF_BIKE_POWER_TYPE_CRANK_TORQUE:
@@ -68,11 +68,16 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 				deadSamples_ = 0;
 			} else {
 				deadSample();
+				if (deadSamples_ < Constants.POWER_DEAD_SAMPLES_ACCEPTED) {
+					Log.v(TAG, "PowerSensor.getPower - first dead sample");
+					power = (int) newPower;
+				}
 			}
 		} else {
 			Log.w(TAG, "PowerSensor.getPower - no sensor");
 		}
 		
+		Log.d(TAG, "PowerSensor.getPower - " + power);
 		return power;
 	}
 
@@ -125,7 +130,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 				}
 				break;
 			}
-			if (deadSamples_ == 0) {
+			if (deadSamples_ < Constants.POWER_DEAD_SAMPLES_ACCEPTED) {
 				Log.d(TAG, "PowerSensor.getCadence - last power sapmle was good");
 				cadence = (int) newCadence;
 			}
@@ -168,7 +173,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 				Log.d(TAG, "PowerSensor.getSpeed - power only");
 				break;
 			}
-			if (deadSamples_ == 0) {
+			if (deadSamples_ < Constants.POWER_DEAD_SAMPLES_ACCEPTED) {
 				Log.d(TAG, "PowerSensor.getSpeed - last power sapmle was good");
 				speed = newSpeed;
 			}
@@ -185,26 +190,35 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 		int cadence = getCadence();
 		int speed = getSpeed();
 		
-		/*
-		 * Invalid power and/or cadence while sensor is connected usually 
-		 * means we are not pedalling and sensor has gone to sleep.
-		 */
-		if (power <= 0 && cadence <= 0 && sensor_ != null && sensor_.isConnected() 
-				&& ++nullValues_ > Constants.POWER_NULL_VALUE_THRESHOLD) {
-			Log.d(TAG, "PowerSensor.retrieveData - coasting");
-			power = 0;
-			cadence = 0;
-		}
-		
 		if (power >= 0) {
-			nullValues_ = 0;
+			Log.v(TAG, "PowerSensor.retrieveData - good power");
 			intent.putExtra(SAMPLE_POWER_KEY, power);
+			nullValues_ = 0;
 		}
 		if (cadence >= 0) {
 			intent.putExtra(Constants.SAMPLE_CADENCE_KEY, cadence);
 		}
 		if (speed >= 0) {
 			intent.putExtra(Constants.SAMPLE_SPEED_KEY, speed);
+		}
+	}
+
+	@Override
+	public void retrieveData(SensorData sensorData) {
+		int power = getPower();
+		int cadence = getCadence();
+		int speed = getSpeed();
+
+		if (power >= 0) {
+			Log.v(TAG, "PowerSensor.retrieveData - good power");
+			sensorData.setPower(power);
+			nullValues_ = 0;
+		}
+		if (cadence >= 0) {
+			sensorData.setCadence(cadence);
+		}
+		if (speed >= 0) {
+			sensorData.setSpeed(speed);
 		}
 	}
 
@@ -217,4 +231,5 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 			Log.d(TAG, "PowerSensor.connectSensor - " + bpd.sensorType);
 		}
 	}
+
 }

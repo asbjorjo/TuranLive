@@ -68,4 +68,14 @@ public class HRSensor extends Sensor implements IHRSensor {
 			intent.putExtra(SAMPLE_HR_KEY, HR);
 		}
 	}
+
+	@Override
+	public void retrieveData(SensorData sensorData) {
+		int HR = getHR();
+		
+		if (HR >= 0) {
+			Log.v(TAG, "HRSensor.retrieveData - good data - " + HR);
+			sensorData.setHr(HR);
+		}
+	}
 }

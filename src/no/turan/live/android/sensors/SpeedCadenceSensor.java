@@ -95,6 +95,19 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 	}
 
 	@Override
+	public void retrieveData(SensorData sensorData) {
+		int speed = getSpeed();
+		int cadence = getCadence();
+		
+		if (speed >= 0) {
+			sensorData.setSpeed(speed);
+		}
+		if (cadence >= 0) {
+			sensorData.setCadence(cadence);
+		}
+	}
+
+	@Override
 	protected void deadSample() {
 		if (deadCadenceSamples_ > DEAD_SAMPLE_THRESHOLD && deadSpeedSamples_ > DEAD_SAMPLE_THRESHOLD) {
 			Log.d(TAG, "SpeedCadenceSensor.deadCadenceSample threshold exceeded: " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());

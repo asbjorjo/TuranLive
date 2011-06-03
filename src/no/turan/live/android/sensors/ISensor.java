@@ -10,4 +10,5 @@ public interface ISensor extends WFSensorConnection.Callback {
 	public void disconnectSensor();
 	public void setupSensor(WFHardwareConnector hardwareConnector);
 	public void retrieveData(Intent intent);
+	public void retrieveData(SensorData sensorData);
 }

@@ -4,23 +4,38 @@ package no.turan.live.android;
 import static no.turan.live.android.Constants.MIN_GPS_ACCURACY;
 import static no.turan.live.android.Constants.MPS_TO_KPH;
 import static no.turan.live.android.Constants.SAMPLE_ALTITUDE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_EXERCISE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
 import static no.turan.live.android.Constants.SAMPLE_LATITUDE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_LONGITUDE_KEY;
+import static no.turan.live.android.Constants.SAMPLE_POWER_KEY;
+import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
 import static no.turan.live.android.Constants.SAMPLE_TIME_KEY;
 import static no.turan.live.android.Constants.TAG;
+
+import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import no.turan.live.android.sensors.HRSensor;
 import no.turan.live.android.sensors.ICadenceSensor;
 import no.turan.live.android.sensors.IHRSensor;
 import no.turan.live.android.sensors.IPowerSensor;
 import no.turan.live.android.sensors.ISpeedSensor;
 import no.turan.live.android.sensors.PowerSensor;
+import no.turan.live.android.sensors.SensorData;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -50,7 +65,6 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private boolean live_;
 	private boolean collecting_;
 	private long sampleTime_;
-	private Intent sampleIntent_;
 	private int exerciseId_;
 	private boolean hrOn_;
 	private boolean speedOn_;
@@ -59,6 +73,8 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private Location lastLocation_;
 	private int badLocationCount_ = 0;
 	private float distance_ = 0;
+	private SensorData sensorSample_;
+	private Queue<String> uploadQueue_;
 	
 	@Override
 	public void hwConnAntError(WFAntError error) {
@@ -92,41 +108,121 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		
 		if (sampleTime_ < System.currentTimeMillis()/1000L) {
 			// Send a sample every second.
-			if (sampleIntent_.hasExtra(SAMPLE_TIME_KEY)) {
-				Log.v(TAG, "CollectorService.hwConnHasData - sample for processing");
-				Log.d(TAG, "CollectorSerivce.hwConnHasData - " + sampleIntent_.getExtras().toString());
-				
-				if (live_) {
-					Intent uploadIntent = new Intent(this, TuranUploadService.class);
-					uploadIntent.putExtras(sampleIntent_.getExtras());
-					startService(uploadIntent);
+			Intent sampleIntent = new Intent("no.turan.live.android.SAMPLE");
+			
+			sampleIntent.putExtra(Constants.SAMPLE_TIME_KEY, sampleTime_);
+			
+			if (sensorSample_.hasHr())
+				sampleIntent.putExtra(Constants.SAMPLE_HR_KEY, sensorSample_.getHr());
+			if (sensorSample_.hasPower())
+				sampleIntent.putExtra(Constants.SAMPLE_POWER_KEY, sensorSample_.getPower());
+			if (sensorSample_.hasCadence())
+				sampleIntent.putExtra(Constants.SAMPLE_CADENCE_KEY, sensorSample_.getCadence());
+			if (sensorSample_.hasSpeed_())
+				sampleIntent.putExtra(Constants.SAMPLE_SPEED_KEY, sensorSample_.getSpeed());
+			
+			String sampleJson = sampleJson(sampleIntent);
+			uploadQueue_.offer(sampleJson);
+			
+			if (live_ && uploadQueue_.size() >= 5) {
+				Intent uploadIntent = new Intent(this, TuranUploadService.class);
+				ArrayList<String> samples = new ArrayList<String>();
+
+				while (!uploadQueue_.isEmpty()) {
+					samples.add(uploadQueue_.remove());
 				}
-				sendBroadcast(sampleIntent_);
+				
+				uploadIntent.putExtra(Constants.SAMPLE_EXERCISE_KEY, exerciseId_);
+				uploadIntent.putExtra(Constants.SAMPLES_KEY, samples);
+				startService(uploadIntent);
 			}
+			
+			sendBroadcast(sampleIntent);
 
 			sampleTime_ = System.currentTimeMillis()/1000L;
-			sampleIntent_ = new Intent("no.turan.live.android.SAMPLE");
-			sampleIntent_.putExtra(SAMPLE_TIME_KEY, sampleTime_);
-			sampleIntent_.putExtra(SAMPLE_EXERCISE_KEY, exerciseId_);
 		}
 		
 		if (hrSensor_ != null) {
 			Log.v(TAG, "CollectorService.hwConnHasData - HR");
-			hrSensor_.retrieveData(sampleIntent_);
+			hrSensor_.retrieveData(sensorSample_);
 		}
 		if (powerSensor_ != null) {
 			Log.v(TAG, "CollectorService.hwConnHasData - power");
-			powerSensor_.retrieveData(sampleIntent_);
+			powerSensor_.retrieveData(sensorSample_);
 		}
 		// Don't bother querying sensors twice if they serve more than one type of data.
 		if (speedSensor_ != null && speedSensor_ != powerSensor_) {
 			Log.v(TAG, "CollectorService.hwConnHasData - speed");
-			speedSensor_.retrieveData(sampleIntent_);
+			speedSensor_.retrieveData(sensorSample_);
 		}
 		// Don't bother querying sensors twice if they serve more than one type of data.
 		if (cadenceSensor_ != null && cadenceSensor_ != powerSensor_ && cadenceSensor_ != speedSensor_) {
 			Log.v(TAG, "CollectorService.hwConnHasData - cadence");
-			cadenceSensor_.retrieveData(sampleIntent_);
+			cadenceSensor_.retrieveData(sensorSample_);
+		}
+	}
+
+	private String sampleJson(Intent sampleIntent) {
+		JSONObject json = new JSONObject();
+		
+		long time = sampleIntent.getLongExtra(SAMPLE_TIME_KEY, -1L);
+		int hr = sampleIntent.getIntExtra(SAMPLE_HR_KEY, -1);
+		int power = sampleIntent.getIntExtra(SAMPLE_POWER_KEY, -1);
+		int cadence = sampleIntent.getIntExtra(SAMPLE_CADENCE_KEY, -1);
+		float speed = sampleIntent.getFloatExtra(SAMPLE_SPEED_KEY, -1);
+		float distance = sampleIntent.getFloatExtra(Constants.SAMPLE_DISTANCE_KEY, -1);
+		double altitude = sampleIntent.getDoubleExtra(SAMPLE_ALTITUDE_KEY, -1);
+		double latitude = sampleIntent.getDoubleExtra(SAMPLE_LATITUDE_KEY, -1);
+		double longitude = sampleIntent.getDoubleExtra(SAMPLE_LONGITUDE_KEY, -1);
+		
+		if (time > 0) {
+			addToJSON(json, time, "time");
+		}
+		if (hr >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good HR");
+			if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0
+					&& hr < 80) {
+				Log.d(TAG, "TuranUploadService.onHandleIntent - adjusting hr");
+				hr = hr+80;
+			}
+			addToJSON(json, hr, "hr");
+		}
+		if (speed >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good SPEED");
+			addToJSON(json, speed, "speed");
+		}
+		if (cadence >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good CADENCE");
+			addToJSON(json, cadence, "cadence");
+		}
+		if (power >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good POWER");
+			addToJSON(json, power, "power");
+		}
+		if (distance >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good DISTANCE");
+			addToJSON(json, distance, "distance");
+		}
+		if (altitude >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good ALTITUDE");
+			addToJSON(json, altitude, "altitude");
+		}
+		if (latitude >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good LATITUDE");
+			addToJSON(json, latitude, "lat");
+		}
+		if (longitude >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good LONGITUDE");
+			addToJSON(json, longitude, "lon");
+		}
+		return json.toString();
+	}
+
+	private void addToJSON(JSONObject json, Object value, String key) {
+		try {
+			json.put(key, value);
+		} catch (JSONException e) {
+			Log.e(TAG, "TuranUploadService.addToJSON - Error adding HR to JSON", e);
 		}
 	}
 
@@ -204,8 +300,9 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		super.onCreate();
 		Log.v(TAG, "CollectorService.onCreate");
 		
-		sampleIntent_ = new Intent(this, TuranUploadService.class);
 		sampleTime_ = System.currentTimeMillis()/1000L;
+		sensorSample_ = new SensorData();
+		uploadQueue_ = new LinkedBlockingQueue<String>();
 		
     	live_ = false;
     	collecting_ = false;
@@ -365,39 +462,12 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	@Override
 	public void onLocationChanged(Location location) {
 		Log.d(TAG, "CollectorService.onLocationChanged - " + location.toString());
-		//SharedPreferences preferences = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
-		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		Log.v(TAG, preferences.toString());
-		
-		boolean speedOn = preferences.getBoolean("speed_enable", false);
-		
+
 		if (location.hasAccuracy() && location.getAccuracy() < MIN_GPS_ACCURACY) {
-			sampleIntent_.putExtra(SAMPLE_LATITUDE_KEY, location.getLatitude());
-			sampleIntent_.putExtra(SAMPLE_LONGITUDE_KEY, location.getLongitude());
-			if (location.hasAltitude()) {
-				sampleIntent_.putExtra(SAMPLE_ALTITUDE_KEY, location.getAltitude());
-			}
-			if (!speedOn && location.hasSpeed()) {
-				sampleIntent_.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed() * MPS_TO_KPH);
-			}
-
-			if (lastLocation_ != null)  {
-				distance_ += location.distanceTo(lastLocation_);
-			}
-			sampleIntent_.putExtra(Constants.SAMPLE_DISTANCE_KEY, distance_);
-			
-			badLocationCount_ = 0;
 			lastLocation_ = location;
-		} else if (++badLocationCount_ > Constants.BAD_LOCATION_THRESHOLD) {
-			lastLocation_ = null;
-		} else if (lastLocation_ != null) {
-			sampleIntent_.putExtra(SAMPLE_LATITUDE_KEY, lastLocation_.getLatitude());
-			sampleIntent_.putExtra(SAMPLE_LONGITUDE_KEY, lastLocation_.getLongitude());
-			if (lastLocation_.hasAltitude()) {
-				sampleIntent_.putExtra(SAMPLE_ALTITUDE_KEY, lastLocation_.getAltitude());
-			}
-
-			sampleIntent_.putExtra(Constants.SAMPLE_DISTANCE_KEY, distance_);
+			badLocationCount_ = 0;
+		} else {
+			badLocationCount_++;
 		}
 	}
 

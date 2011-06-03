@@ -17,12 +17,14 @@ public abstract class Constants {
 	public static final String SAMPLE_ALTITUDE_KEY = "no.turan.live.android.ALTITUDE";
 	public static final String SAMPLE_LATITUDE_KEY = "no.turan.live.android.LATITUDE";
 	public static final String SAMPLE_LONGITUDE_KEY = "no.turan.live.android.LONGITUDE";
+	public static final String SAMPLES_KEY = "no.turan.live.android.SAMPLES";
 	
-	public static final int POWER_NULL_VALUE_THRESHOLD = 2;
+	public static final int POWER_NULL_VALUE_THRESHOLD = 5;
 	public static final int BAD_LOCATION_THRESHOLD = 5;
 	public static final int DEAD_SAMPLE_THRESHOLD = 10;
 	public static final float MIN_GPS_ACCURACY = 20f;
 	public static final float MPS_TO_KPH = 3.6f;
+	public static final int POWER_DEAD_SAMPLES_ACCEPTED = 3;
 	
 	public enum ExerciseState{
 		FINISHED ('F'),
