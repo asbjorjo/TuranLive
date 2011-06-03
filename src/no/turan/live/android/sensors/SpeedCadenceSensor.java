@@ -12,10 +12,10 @@ import com.wahoofitness.api.data.WFBikeSpeedCadenceData;
 
 public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 		ISpeedSensor {
-	private long mPreviousSpeedTime;
-	private int mDeadSpeedSamples;
-	private long mPreviousCadenceTime;
-	private int mDeadCadenceSamples;
+	private long previousSpeedTime_;
+	private int deadSpeedSamples_;
+	private long previousCadenceTime_;
+	private int deadCadenceSamples_;
 
 	public SpeedCadenceSensor() {
 		super(WFSensorType.WF_SENSORTYPE_BIKE_SPEED_CADENCE);
@@ -24,17 +24,17 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 	@Override
 	public int getSpeed() {
 		int speed = -1;
-		if (mSensor != null && mSensor.isConnected()) {
+		if (sensor_ != null && sensor_.isConnected()) {
 			Log.v(TAG, "SpeedCadence.getSpeed - good sensor");
-			WFBikeSpeedCadenceData data = (WFBikeSpeedCadenceData) mSensor.getData();
+			WFBikeSpeedCadenceData data = (WFBikeSpeedCadenceData) sensor_.getData();
 			
 			Log.d(TAG, "SpeedCadenceSensor.getSpeed - " + data.speedTimestamp + " - " + data.instantWheelRPM);
 			
-			if (data.speedTimestamp != mPreviousSpeedTime) {
+			if (data.speedTimestamp != previousSpeedTime_) {
 				Log.d(TAG, "SpeedCadenceSensor.getSpeed - good data");
 				speed = data.instantWheelRPM;
-				mPreviousSpeedTime = data.speedTimestamp;
-				mDeadSpeedSamples = 0;
+				previousSpeedTime_ = data.speedTimestamp;
+				deadSpeedSamples_ = 0;
 			} else {
 				deadSpeedSample();
 			}
@@ -46,25 +46,25 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 	}
 
 	private void deadSpeedSample() {
-		Log.d(TAG, "SpeedCadenceSensor.deadSpeedSample: " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber());
-		mDeadSpeedSamples++;
+		Log.d(TAG, "SpeedCadenceSensor.deadSpeedSample: " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());
+		deadSpeedSamples_++;
 		deadSample();
 	}
 
 	@Override
 	public int getCadence() {
 		int cadence = -1;
-		if (mSensor != null && mSensor.isConnected()) {
+		if (sensor_ != null && sensor_.isConnected()) {
 			Log.v(TAG, "SpeedCadence.getCadence - good sensor");
-			WFBikeSpeedCadenceData data = (WFBikeSpeedCadenceData) mSensor.getData();
+			WFBikeSpeedCadenceData data = (WFBikeSpeedCadenceData) sensor_.getData();
 			
 			Log.d(TAG, "SpeedCadenceSensor.getCadence - " + data.cadenceTimestamp + " - " + data.instantCrankRPM);
 			
-			if (data.cadenceTimestamp != mPreviousCadenceTime) {
+			if (data.cadenceTimestamp != previousCadenceTime_) {
 				Log.d(TAG, "SpeedCadenceSensor.getCadence - good data");
 				cadence = data.instantCrankRPM;
-				mPreviousCadenceTime = data.cadenceTimestamp;
-				mDeadCadenceSamples = 0;
+				previousCadenceTime_ = data.cadenceTimestamp;
+				deadCadenceSamples_ = 0;
 			} else {
 				deadCadenceSample();
 			}
@@ -76,8 +76,8 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 	}
 
 	private void deadCadenceSample() {
-		Log.d(TAG, "SpeedCadenceSensor.deadCadenceSample: " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber());
-		mDeadCadenceSamples++;
+		Log.d(TAG, "SpeedCadenceSensor.deadCadenceSample: " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());
+		deadCadenceSamples_++;
 		deadSample();
 	}
 
@@ -96,14 +96,14 @@ public class SpeedCadenceSensor extends Sensor implements ICadenceSensor,
 
 	@Override
 	protected void deadSample() {
-		if (mDeadCadenceSamples > DEAD_SAMPLE_THRESHOLD && mDeadSpeedSamples > DEAD_SAMPLE_THRESHOLD) {
-			Log.d(TAG, "SpeedCadenceSensor.deadCadenceSample threshold exceeded: " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber());
+		if (deadCadenceSamples_ > DEAD_SAMPLE_THRESHOLD && deadSpeedSamples_ > DEAD_SAMPLE_THRESHOLD) {
+			Log.d(TAG, "SpeedCadenceSensor.deadCadenceSample threshold exceeded: " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());
 			disconnectSensor();
 			connectSensor();
-			mDeadCadenceSamples = 0;
-			mDeadSpeedSamples = 0;
+			deadCadenceSamples_ = 0;
+			deadSpeedSamples_ = 0;
 		} else {
-			Log.v(TAG, "SpeedCadenceSensor.deadSample - speed: " + mDeadSpeedSamples + " cadence: " + mDeadCadenceSamples);
+			Log.v(TAG, "SpeedCadenceSensor.deadSample - speed: " + deadSpeedSamples_ + " cadence: " + deadCadenceSamples_);
 		}
 	}
 }

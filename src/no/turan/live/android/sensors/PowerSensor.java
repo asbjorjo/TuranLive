@@ -15,7 +15,7 @@ import com.wahoofitness.api.data.WFBikePowerPowerOnlyData;
 import com.wahoofitness.api.data.WFBikePowerRawData;
 import com.wahoofitness.api.data.WFBikePowerWheelTorqueData;
 
-public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor {
+public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor, ISpeedSensor {
 	public PowerSensor() {
 		super(WFSensorType.WF_SENSORTYPE_BIKE_POWER);
 	}
@@ -24,8 +24,8 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 	public int getPower() {
 		int power = -1;
 
-		if (mSensor != null && mSensor.isConnected()) {
-			WFBikePowerRawData rawData = (WFBikePowerRawData) mSensor.getRawData();
+		if (sensor_ != null && sensor_.isConnected()) {
+			WFBikePowerRawData rawData = (WFBikePowerRawData) sensor_.getRawData();
 			long timestamp = -1;
 			long newPower = -1;
 			/*
@@ -60,10 +60,10 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 				newPower = powerdata.instantPower;
 				break;
 			}
-			if (timestamp != mPreviousSampleTime) {
+			if (timestamp != previousSampleTime_) {
 				power = (int) newPower;
-				mPreviousSampleTime = timestamp;
-				mDeadSamples = 0;
+				previousSampleTime_ = timestamp;
+				deadSamples_ = 0;
 			} else {
 				deadSample();
 			}
@@ -79,8 +79,8 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 		Log.v(TAG, "PowerSensor.getCadence");
 		int cadence = -1;
 		
-		if (mSensor != null && mSensor.isConnected()) {
-			WFBikePowerRawData rawData = (WFBikePowerRawData) mSensor.getRawData();
+		if (sensor_ != null && sensor_.isConnected()) {
+			WFBikePowerRawData rawData = (WFBikePowerRawData) sensor_.getRawData();
 			long timestamp = -1;
 			long newCadence = -1;
 			/*
@@ -123,7 +123,7 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 				}
 				break;
 			}
-			if (mDeadSamples == 0) {
+			if (deadSamples_ == 0) {
 				Log.d(TAG, "PowerSensor.getCadence - last power sapmle was good");
 				cadence = (int) newCadence;
 			}
@@ -135,9 +135,63 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 	}
 
 	@Override
+	public int getSpeed() {
+		Log.v(TAG, "PowerSensor.getSpeed");
+		int speed = -1;
+		
+		if (sensor_ != null && sensor_.isConnected()) {
+			WFBikePowerRawData rawData = (WFBikePowerRawData) sensor_.getRawData();
+			long timestamp = -1;
+			int newSpeed = -1;
+			/*
+			 * Check which type of sensor is connected and get data accordingly.
+			 */
+			switch (rawData.sensorType) {
+			case WF_BIKE_POWER_TYPE_UNIDENTIFIED:
+				Log.d(TAG, "PowerSensor.getSpeed - unidentified");
+				break;
+			case WF_BIKE_POWER_TYPE_CTF:
+				Log.d(TAG, "PowerSensor.getSpeed - crank torque frequency");
+				break;
+			case WF_BIKE_POWER_TYPE_CRANK_TORQUE:
+				Log.d(TAG, "PowerSensor.getSpeed - crank torque");
+				break;
+			case WF_BIKE_POWER_TYPE_WHEEL_TORQUE:
+				Log.d(TAG, "PowerSensor.getSpeed - wheel torque");
+				WFBikePowerWheelTorqueData wtdata = rawData.wheelTorqueData;
+				timestamp = wtdata.accumulatedWheelTicks;
+				newSpeed = wtdata.wheelRPM;
+				break;
+			case WF_BIKE_POWER_TYPE_POWER_ONLY:
+				Log.d(TAG, "PowerSensor.getSpeed - power only");
+				break;
+			}
+			if (deadSamples_ == 0) {
+				Log.d(TAG, "PowerSensor.getSpeed - last power sapmle was good");
+				speed = newSpeed;
+			}
+		} else {
+			Log.w(TAG, "PowerSensor.getSpeed - no sensor");
+		}
+		
+		return speed;
+	}
+
+	@Override
 	public void retrieveData(Intent intent) {
 		int power = getPower();
 		int cadence = getCadence();
+		int speed = getSpeed();
+		
+		/*
+		 * Invalid power and/or cadence while sensor is connected usually 
+		 * means we are not pedalling and sensor has gone to sleep.
+		 */
+		if (power <= 0 && cadence <= 0 && sensor_ != null && sensor_.isConnected()) {
+			Log.d(TAG, "PowerSensor.retrieveData - coasting");
+			power = 0;
+			cadence = 0;
+		}
 		
 		if (power >= 0) {
 			intent.putExtra(SAMPLE_POWER_KEY, power);
@@ -145,13 +199,16 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor 
 		if (cadence >= 0) {
 			intent.putExtra(Constants.SAMPLE_CADENCE_KEY, cadence);
 		}
+		if (speed >= 0) {
+			intent.putExtra(Constants.SAMPLE_SPEED_KEY, speed);
+		}
 	}
 
 	@Override
 	public void connectSensor() {
 		super.connectSensor();
-		if (mSensor != null && mSensor.isConnected()) {
-			WFBikePowerConnection bpc = (WFBikePowerConnection) mSensor;
+		if (sensor_ != null && sensor_.isConnected()) {
+			WFBikePowerConnection bpc = (WFBikePowerConnection) sensor_;
 			WFBikePowerData bpd = bpc.getBikePowerData();
 			Log.d(TAG, "PowerSensor.connectSensor - " + bpd.sensorType);
 		}

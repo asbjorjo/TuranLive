@@ -10,102 +10,103 @@ import com.wahoofitness.api.comm.WFSensorConnection;
 import com.wahoofitness.api.comm.WFSensorConnection.WFSensorConnectionStatus;
 
 public abstract class Sensor implements ISensor {
-	protected WFHardwareConnector mHardwareConnector;
-	protected WFSensorConnection mSensor;
-	protected short mSensorType;
-	protected int mDeadSamples = 0;
-	protected long mPreviousSampleTime = 0;
+	protected WFHardwareConnector hardwareConnector_;
+	protected WFSensorConnection sensor_;
+	protected short sensorType_;
+	protected int deadSamples_ = 0;
+	protected long previousSampleTime_ = 0;
+	protected boolean reconnectable_ = false;
 	
 	protected Sensor(short sensorType) {
-		mSensorType = sensorType;
+		sensorType_ = sensorType;
 	}
 	
 	public int getSensorId() {
-		return mSensor.getDeviceNumber();
+		return sensor_.getDeviceNumber();
 	}
 
 	@Override
 	public void connectionStateChanged(WFSensorConnectionStatus status) {
-		if (mSensor != null) {
-			Log.d(TAG, "Sensor.connectionStateChanged - " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber() + " - " + status.name());
+		if (sensor_ != null) {
+			Log.d(TAG, "Sensor.connectionStateChanged - " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber() + " - " + status.name());
 		} else {
-			Log.d(TAG, "Sensor.connectionStateChanged - " + mSensorType + " - null");
+			Log.d(TAG, "Sensor.connectionStateChanged - " + sensorType_ + " - null");
 		}
-		if (mSensor != null && !mSensor.isValid()) {
-			Log.d(TAG, "Sensor.connectionStateChanged - " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber() + " - invalid");
-			mSensor.setCallback(null);
-			mSensor = null;
+		if (sensor_ != null && !sensor_.isValid()) {
+			Log.d(TAG, "Sensor.connectionStateChanged - " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber() + " - invalid");
+			sensor_.setCallback(null);
+			sensor_ = null;
 			connectSensor();
+			reconnectable_ = true;
 		}
 	}
 	
 	public void setupSensor(WFHardwareConnector hardwareConnector) {
-		Log.d(TAG, "Sensor.setupSensor - " + mSensorType);
-		mHardwareConnector = hardwareConnector;
+		Log.d(TAG, "Sensor.setupSensor - " + sensorType_);
+		hardwareConnector_ = hardwareConnector;
 		connectSensor();
 	}
 	
 	public void connectSensor() {
-		Log.d(TAG, "Sensor.connectSensor - " + mSensorType);
-		if (mHardwareConnector != null) {
-			if (mSensor != null) {
-				Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber() + " - " + mSensor.getConnectionStatus());
-				switch (mSensor.getConnectionStatus())
+		Log.d(TAG, "Sensor.connectSensor - " + sensorType_);
+		if (hardwareConnector_ != null) {
+			if (sensor_ != null) {
+				Log.d(TAG, "Sensor.connectSensor - " + sensorType_ + " - " + sensor_.getDeviceNumber() + " - " + sensor_.getConnectionStatus());
+				switch (sensor_.getConnectionStatus())
 				{
 					case WF_SENSOR_CONNECTION_STATUS_CONNECTED:
 					case WF_SENSOR_CONNECTION_STATUS_CONNECTING:
 						break;
 					case WF_SENSOR_CONNECTION_STATUS_DISCONNECTING:
 					case WF_SENSOR_CONNECTION_STATUS_IDLE:
-						mSensor = null;
+						sensor_ = null;
 						break;
 				}
 			}
-			if (mSensor == null) {
-				Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor defined");
+			if (sensor_ == null) {
+				Log.d(TAG, "Sensor.connectSensor - " + sensorType_ + " - no sensor defined");
 				WFConnectionParams params = new WFConnectionParams();
-				params.sensorType = mSensorType;
-				mSensor = mHardwareConnector.initSensorConnection(params);
-				if (mSensor != null) {
-					mSensor.setCallback(this);
+				params.sensorType = sensorType_;
+				sensor_ = hardwareConnector_.initSensorConnection(params);
+				if (sensor_ != null) {
+					Log.d(TAG, "Sensor.connectSensor - " + sensorType_ + " - initialised");
+					sensor_.setCallback(this);
+					reconnectable_ = false;
 				} else {
-					Log.d(TAG, "Sensor.connectSensor - " + mSensorType + " - no sensor found");
+					Log.e(TAG, "Sensor.connectSensor - " + sensorType_ + " - could not initialise");
 				}
 			}
 		} else {
-			Log.e(TAG, "Sensor.connectSensor - no hardware connector - " + mSensorType);
+			Log.e(TAG, "Sensor.connectSensor - no hardware connector - " + sensorType_);
 		}
 	}
 
 	public void disconnectSensor() {
-		if (mSensor != null) {
-			Log.d(TAG, "Sensor.disconnectSensor - " + mSensorType + " - " + mSensor.getDeviceNumber());
-			switch (mSensor.getConnectionStatus())
+		if (sensor_ != null) {
+			Log.d(TAG, "Sensor.disconnectSensor - " + sensorType_ + " - " + sensor_.getDeviceNumber());
+			switch (sensor_.getConnectionStatus())
 			{
 				case WF_SENSOR_CONNECTION_STATUS_IDLE:
-					if (mSensor != null) {
-						mSensor.setCallback(null);
-						mSensor = null;
-						break;
-					}
+					sensor_.setCallback(null);
+					sensor_ = null;
+					break;
 				case WF_SENSOR_CONNECTION_STATUS_DISCONNECTING:
 				case WF_SENSOR_CONNECTION_STATUS_CONNECTED:
 				case WF_SENSOR_CONNECTION_STATUS_CONNECTING:
-					mSensor.disconnect();
+					sensor_.disconnect();
 					break;
 			}
 		} else {
-			Log.d(TAG, "Sensor.disconnectSensor - " + mSensorType + " - no sensor");
+			Log.d(TAG, "Sensor.disconnectSensor - " + sensorType_ + " - no sensor");
 		}
 	}
 
 	protected void deadSample() {
-		Log.d(TAG, "Sensor.deadSample - " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber());
-		if (++mDeadSamples > DEAD_SAMPLE_THRESHOLD) {
-			Log.d(TAG, "Sensor.deadSample threshold exceeded: " + mSensor.getSensorType() + " - " + mSensor.getDeviceNumber());
+		Log.d(TAG, "Sensor.deadSample - " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());
+		if (++deadSamples_ > DEAD_SAMPLE_THRESHOLD) {
+			Log.d(TAG, "Sensor.deadSample threshold exceeded: " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());
 			disconnectSensor();
 			connectSensor();
-			mDeadSamples = 0;
 		}
 	}
 }

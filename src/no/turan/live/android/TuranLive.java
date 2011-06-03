@@ -4,7 +4,6 @@ import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
 import static no.turan.live.android.Constants.SAMPLE_POWER_KEY;
 import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
-import static no.turan.live.android.Constants.SETTINGS_NAME;
 import static no.turan.live.android.Constants.TAG;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -16,7 +15,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
@@ -31,22 +29,22 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 public class TuranLive extends Activity {
-	ICollectorService mCollector;
-	boolean mCollectorBound;
+	ICollectorService collector_;
+	boolean collectorBound_;
 	
 	private ServiceConnection mCollectorConnection = new ServiceConnection() {
 		@Override
 		public void onServiceDisconnected(ComponentName name) {
 			Log.d(TAG, "ServiceConnection.onServiceDisconnected - CollectorService");
-			mCollectorBound = false;
+			collectorBound_ = false;
 			updateMain();
 		}
 		
 		@Override
 		public void onServiceConnected(ComponentName name, IBinder service) {
 			Log.d(TAG, "ServiceConnection.onServiceConnected -  CollectorService");
-			mCollector =  (ICollectorService) service;
-			mCollectorBound = true;
+			collector_ =  (ICollectorService) service;
+			collectorBound_ = true;
 			updateMain();
 		}
 	};
@@ -82,13 +80,6 @@ public class TuranLive extends Activity {
 
 	protected void updateDisplay(Bundle values) {
 		Log.d(TAG, "updateDisplay");
-		//SharedPreferences preferences = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);
-		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-		Log.d(TAG, preferences.toString());
-		boolean hrOn = preferences.getBoolean("hr_enable", false);
-		boolean speedOn = preferences.getBoolean("speed_enable", false);
-		boolean cadenceOn = preferences.getBoolean("cadence_enable", false);
-		boolean powerOn = preferences.getBoolean("power_enable", false);
 		
 		int hr = values.getInt(SAMPLE_HR_KEY, -1);
 		int speed = values.getInt(SAMPLE_SPEED_KEY, -1);
@@ -97,25 +88,25 @@ public class TuranLive extends Activity {
 		
 		TextView textView;
 		textView = (TextView) findViewById(R.id.displayHR);
-		if (hrOn && hr>=0) {
+		if (hr>=0) {
 			textView.setText(Integer.toString(hr));
 		} else  {
 			textView.setText("HR");
 		}
 		textView = (TextView) findViewById(R.id.displaySpeed);
-		if (speedOn && speed>=0) {
+		if (speed>=0) {
 			textView.setText(Integer.toString(speed));
 		} else {
 			textView.setText("Speed");
 		}
 		textView = (TextView) findViewById(R.id.displayCadence);
-		if (cadenceOn && cadence >= 0) {
+		if (cadence >= 0) {
 			textView.setText(Integer.toString(cadence));
 		} else {
 			textView.setText("Cadence");
 		}
 		textView = (TextView) findViewById(R.id.displayPower);
-		if (powerOn && power >= 0) {
+		if (power >= 0) {
 			textView.setText(Integer.toString(power));
 		} else {
 			textView.setText("Power");
@@ -181,18 +172,16 @@ public class TuranLive extends Activity {
     	Log.d(TAG, "updateMain");
     	Button start = (Button) findViewById(R.id.antCollect);
     	Button live  = (Button) findViewById(R.id.goLive);
-    	EditText exercise = (EditText) findViewById(R.id.exerciseIdBox);
+    	TextView exercise = (TextView) findViewById(R.id.exerciseIdBox);
     	
-    	if (mCollectorBound && mCollector.isCollecting()) {
+    	if (collectorBound_ && collector_.isCollecting()) {
 			start.setText(R.string.stop);
 
-			if (mCollector.isLive()) {
-				exercise.setInputType(InputType.TYPE_NULL);
-				exercise.setEnabled(false);
+			if (collector_.isLive()) {
+				exercise.setText(Integer.toString(collector_.getExercise()));
 				live.setText(R.string.go_off);
 			} else {
-				exercise.setInputType(InputType.TYPE_CLASS_NUMBER);
-				exercise.setEnabled(true);
+				exercise.setText("Exercise");
 				live.setText(R.string.go_live);
 			}
 			live.setEnabled(true);
@@ -200,8 +189,7 @@ public class TuranLive extends Activity {
     		start.setText(R.string.start);
     		live.setText(R.string.go_live);
     		live.setEnabled(false);
-    		exercise.setInputType(InputType.TYPE_CLASS_NUMBER);
-			exercise.setEnabled(true);
+    		exercise.setText("Exercise");
     	}
     }
     
@@ -215,10 +203,10 @@ public class TuranLive extends Activity {
     	Log.d(TAG, "onStartCollector");
     	Intent service = new Intent(this, CollectorService.class);
     	
-    	if (mCollectorBound && mCollector.isCollecting()) {
-    		mCollector.goOff();
+    	if (collectorBound_ && collector_.isCollecting()) {
+    		collector_.goOff();
     		unbindService(mCollectorConnection);
-    		mCollectorBound = false;
+    		collectorBound_ = false;
     		stopService(new Intent(this, CollectorService.class));
     		bindService(service, mCollectorConnection, BIND_AUTO_CREATE);
         } else {
@@ -228,14 +216,21 @@ public class TuranLive extends Activity {
     }
     
     public void onGoLive(View view) {
-    	Log.d(TAG, "onGoLive");
+    	Log.v(TAG, "onGoLive");
     	
-    	if (mCollector.isLive()) {
-    		mCollector.goOff();
+    	if (collector_.isLive()) {
+    		collector_.goOff();
     	} else {
-    		EditText exerciseIdBox = (EditText) findViewById(R.id.exerciseIdBox);
-        	int exerciseId = Integer.parseInt(exerciseIdBox.getText().toString());
-        	mCollector.goLive(exerciseId);
+    		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+    		String exerciseIdString = preferences.getString("turan_exercise", "0");
+    		int exerciseId;
+    		try {
+    			exerciseId = Integer.parseInt(exerciseIdString);
+    		} catch (NumberFormatException e) {
+    			Log.e(TAG, "onGoLive - " + exerciseIdString);
+    			exerciseId = 0;
+    		}
+        	collector_.goLive(exerciseId);
     	}
     	updateMain();
     }
@@ -268,9 +263,9 @@ public class TuranLive extends Activity {
 	protected void onStop() {
 		Log.d(TAG, "onStop");
 		super.onStop();
-		if (mCollectorBound) {
+		if (collectorBound_) {
 			unbindService(mCollectorConnection);
-			mCollectorBound = false;
+			collectorBound_ = false;
 		}
 		
 		//SharedPreferences settings = getSharedPreferences(SETTINGS_NAME, MODE_PRIVATE);

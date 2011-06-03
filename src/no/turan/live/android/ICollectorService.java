@@ -5,4 +5,5 @@ public interface ICollectorService {
 	public boolean isCollecting();
 	public void goLive(int exerciseId);
 	public void goOff();
+	public int getExercise();
 }

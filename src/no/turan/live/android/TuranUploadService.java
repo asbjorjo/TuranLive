@@ -37,7 +37,7 @@ public class TuranUploadService extends IntentService {
 	
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		Log.d(TAG, "TuranUploadService.onHandleIntent");
+		Log.v(TAG, "TuranUploadService.onHandleIntent");
 		
 		JSONArray jsonArray = new JSONArray();
 		JSONObject json = new JSONObject();
@@ -52,41 +52,49 @@ public class TuranUploadService extends IntentService {
 		double latitude = intent.getDoubleExtra(SAMPLE_LATITUDE_KEY, -1);
 		double longitude = intent.getDoubleExtra(SAMPLE_LONGITUDE_KEY, -1);
 		
+		if (hr <0 && power < 0 && cadence < 0 && speed < 0 && altitude < 0 && latitude < 0 && longitude < 0) {
+			Log.w(TAG, "TuranUploadService.onHandleIntent - sample with no data");
+			return;
+		}
 		
 		if (intent.getExtras() != null) {
 			Log.d(TAG, intent.getExtras().toString());
 		}
 		
 		if (time > 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good TIME");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good TIME");
 			addToJSON(json, time, "time");
+		} else {
+			Log.e(TAG, "TuranUploadService.onHandleIntent - sample with no time");
+			Log.e(TAG, "TuranUploadService.onHandleIntent - " + intent.getExtras());
+			return;
 		}
 		if (hr >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good HR");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good HR");
 			addToJSON(json, hr, "hr");
 		}
 		if (speed >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good SPEED");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good SPEED");
 			addToJSON(json, speed, "speed");
 		}
 		if (cadence >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good CADENCE");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good CADENCE");
 			addToJSON(json, cadence, "cadence");
 		}
 		if (power >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good POWER");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good POWER");
 			addToJSON(json, power, "power");
 		}
 		if (altitude >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good ALTITUDE");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good ALTITUDE");
 			addToJSON(json, altitude, "altitude");
 		}
 		if (latitude >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good LATITUDE");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good LATITUDE");
 			addToJSON(json, latitude, "lat");
 		}
 		if (longitude >= 0) {
-			Log.d(TAG, "TuranUploadService.onHandleIntent - good LONGITUDE");
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good LONGITUDE");
 			addToJSON(json, longitude, "lon");
 		}
 		
@@ -96,7 +104,7 @@ public class TuranUploadService extends IntentService {
 			try {
 				String URL = "http://turan.no/exercise/update/live/" + exerciseId;
 				Log.d(TAG, "TuranUploadService.onHandleIntent - Posting update to " + URL);
-				Log.d(TAG, jsonArray.toString());
+				Log.d(TAG, "TuranUploadService.onHandleIntent - " + jsonArray.toString());
 				HttpClient client = new DefaultHttpClient();
 				HttpPost post = new HttpPost(URL);
 				StringEntity se = new StringEntity(jsonArray.toString());

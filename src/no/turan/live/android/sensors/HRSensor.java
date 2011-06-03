@@ -2,7 +2,6 @@ package no.turan.live.android.sensors;
 
 import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
 import static no.turan.live.android.Constants.TAG;
-import no.turan.live.android.Constants;
 import android.content.Intent;
 import android.util.Log;
 
@@ -20,29 +19,33 @@ public class HRSensor extends Sensor implements IHRSensor {
 		Log.v(TAG, "HRSensor.getHR");
 		int hr = -1;
 		
-		if (mSensor != null && mSensor.isConnected()) {
+		if (sensor_ != null && sensor_.isConnected()) {
 			Log.v(TAG, "HRSensor.getHR - good sensor");
-			WFHeartrateData data = (WFHeartrateData) mSensor.getData();
+			WFHeartrateData data = (WFHeartrateData) sensor_.getData();
 			
-			Log.i(TAG, "HRSensor.getHR - " + data.timestamp + " - " + data.computedHeartrate);
+			Log.d(TAG, "HRSensor.getHR - " + data.timestamp + " - " + data.accumBeatCount + " - " + data.computedHeartrate);
 
 			if (data.timestamp == 0) {
-				Log.d(TAG, "HRSensor.getHR - null time");
+				Log.v(TAG, "HRSensor.getHR - null time");
 				deadSample();
-			} else if (data.timestamp != mPreviousSampleTime) {
-				Log.d(TAG, "HRSensor.getHR - good data");
+			} else if (data.timestamp != previousSampleTime_) {
+				Log.v(TAG, "HRSensor.getHR - good data");
 				hr = data.computedHeartrate;
-				mPreviousSampleTime = data.timestamp;
-				mDeadSamples = 0;
+				previousSampleTime_ = data.timestamp;
+				deadSamples_ = 0;
 			} else {
 				deadSample();
-				if (mDeadSamples < 2) {
-					Log.d(TAG, "HRSensor.getHR - first dead sample");
+				if (deadSamples_ < 2) {
+					Log.v(TAG, "HRSensor.getHR - first dead sample");
 					hr = data.computedHeartrate;
 				}
 			}
 		} else {
 			Log.w(TAG, "HRSensor.getHR - no HRSensor");
+			if (reconnectable_) {
+				Log.d(TAG, "HRSensor.getHR - reconnecting");
+				connectSensor();
+			}
 		}
 		return hr;
 	}

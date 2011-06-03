@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen
+  xmlns:android="http://schemas.android.com/apk/res/android">
+  <PreferenceCategory android:title="Turan">
+  	<EditTextPreference android:title="Username"
+  						android:key="turan_username"
+  						android:defaultValue=""/>
+  	<EditTextPreference android:title="Exercise"
+  						android:key="turan_exercise"
+  						android:defaultValue="0"/>
+  </PreferenceCategory>
+  
+  <PreferenceCategory android:title="Sensors">
+   	<CheckBoxPreference android:title="Heart Rate"
+   						android:key="hr_enable"
+   						android:defaultValue="false"/>
+   	<CheckBoxPreference android:title="Power"
+   						android:key="power_enable"
+   						android:defaultValue="false"/>
+   	<CheckBoxPreference android:title="Cadence"
+ 						android:key="cadence_enable"
+   						android:defaultValue="false"/>
+   	<CheckBoxPreference android:title="Speed"
+   						android:key="speed_enable"
+   						android:defaultValue="false"/>
+  </PreferenceCategory>
+</PreferenceScreen>
