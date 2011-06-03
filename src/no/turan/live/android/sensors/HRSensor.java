@@ -14,6 +14,10 @@ public class HRSensor extends Sensor implements IHRSensor {
 		super(WFSensorType.WF_SENSORTYPE_HEARTRATE);
 	}
 	
+	public HRSensor(short sensorId) {
+		super(WFSensorType.WF_SENSORTYPE_HEARTRATE, sensorId);
+	}
+	
 	@Override
 	public int getHR() {
 		Log.v(TAG, "HRSensor.getHR");
@@ -40,13 +44,18 @@ public class HRSensor extends Sensor implements IHRSensor {
 					hr = data.computedHeartrate;
 				}
 			}
-		} else {
-			Log.w(TAG, "HRSensor.getHR - no HRSensor");
+		} else if (sensor_ != null) {
+			Log.w(TAG, "HRSensor.getHR - sensor not connected");
 			if (reconnectable_) {
 				Log.d(TAG, "HRSensor.getHR - reconnecting");
 				connectSensor();
 			}
+		} else {
+			Log.w(TAG, "HRSensor.getHR - no sensor");
+			Log.d(TAG, "HRSensor.getHR - reconnecting");
+			connectSensor();
 		}
+
 		return hr;
 	}
 
