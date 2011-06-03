@@ -58,7 +58,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private boolean powerOn_;
 	private Location lastLocation_;
 	private int badLocationCount_ = 0;
-	private float distance_;
+	private float distance_ = 0;
 	
 	@Override
 	public void hwConnAntError(WFAntError error) {
@@ -72,7 +72,8 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 
 	@Override
 	public void hwConnConnectedSensor(WFSensorConnection connection) {
-		Log.d(TAG, "CollectorService.hwConnConnectedSensor - " + connection.getSensorType() + " - " + connection.getDeviceNumber());
+		Log.d(TAG, "CollectorService.hwConnConnectedSensor - " + connection.getSensorType() 
+				+ " - " + connection.getDeviceNumber() + " - " + connection.getTransmissionType());
 	}
 
 	@Override
@@ -380,23 +381,22 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 				sampleIntent_.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed() * MPS_TO_KPH);
 			}
 
-			distance_ = location.distanceTo(lastLocation_);
+			if (lastLocation_ != null)  {
+				distance_ += location.distanceTo(lastLocation_);
+			}
 			sampleIntent_.putExtra(Constants.SAMPLE_DISTANCE_KEY, distance_);
 			
 			badLocationCount_ = 0;
 			lastLocation_ = location;
 		} else if (++badLocationCount_ > Constants.BAD_LOCATION_THRESHOLD) {
 			lastLocation_ = null;
-			distance_ = 0;
 		} else if (lastLocation_ != null) {
 			sampleIntent_.putExtra(SAMPLE_LATITUDE_KEY, lastLocation_.getLatitude());
 			sampleIntent_.putExtra(SAMPLE_LONGITUDE_KEY, lastLocation_.getLongitude());
 			if (lastLocation_.hasAltitude()) {
 				sampleIntent_.putExtra(SAMPLE_ALTITUDE_KEY, lastLocation_.getAltitude());
 			}
-			if (!speedOn && lastLocation_.hasSpeed()) {
-				sampleIntent_.putExtra(Constants.SAMPLE_SPEED_KEY, lastLocation_.getSpeed() * MPS_TO_KPH);
-			}
+
 			sampleIntent_.putExtra(Constants.SAMPLE_DISTANCE_KEY, distance_);
 		}
 	}
