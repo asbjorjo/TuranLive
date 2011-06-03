@@ -56,7 +56,8 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private boolean speedOn_;
 	private boolean cadenceOn_;
 	private boolean powerOn_;
-
+	private Location lastLocation_;
+	
 	@Override
 	public void hwConnAntError(WFAntError error) {
 		switch (error) {
@@ -377,6 +378,11 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 				sampleIntent_.putExtra(Constants.SAMPLE_SPEED_KEY, location.getSpeed() * MPS_TO_KPH);
 			}
 		}
+		float distance = location.distanceTo(lastLocation_);
+		
+		sampleIntent_.putExtra(Constants.SAMPLE_DISTANCE_KEY, distance);
+		
+		lastLocation_ = location;
 	}
 
 	@Override

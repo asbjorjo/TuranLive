@@ -13,6 +13,7 @@ public abstract class Constants {
 	public static final String SAMPLE_SPEED_KEY = "no.turan.live.android.SPEED";
 	public static final String SAMPLE_CADENCE_KEY = "no.turan.live.android.CADENCE";
 	public static final String SAMPLE_POWER_KEY = "no.turan.live.android.POWER";
+	public static final String SAMPLE_DISTANCE_KEY = "no.turan.live.android.DISTANCE";
 	public static final String SAMPLE_ALTITUDE_KEY = "no.turan.live.android.ALTITUDE";
 	public static final String SAMPLE_LATITUDE_KEY = "no.turan.live.android.LATITUDE";
 	public static final String SAMPLE_LONGITUDE_KEY = "no.turan.live.android.LONGITUDE";

@@ -50,11 +50,13 @@ public class TuranUploadService extends IntentService {
 		int power = intent.getIntExtra(SAMPLE_POWER_KEY, -1);
 		int cadence = intent.getIntExtra(SAMPLE_CADENCE_KEY, -1);
 		float speed = intent.getFloatExtra(SAMPLE_SPEED_KEY, -1);
+		float distance = intent.getFloatExtra(Constants.SAMPLE_DISTANCE_KEY, -1);
 		double altitude = intent.getDoubleExtra(SAMPLE_ALTITUDE_KEY, -1);
 		double latitude = intent.getDoubleExtra(SAMPLE_LATITUDE_KEY, -1);
 		double longitude = intent.getDoubleExtra(SAMPLE_LONGITUDE_KEY, -1);
 		
-		if (hr <0 && power < 0 && cadence < 0 && speed < 0 && altitude < 0 && latitude < 0 && longitude < 0) {
+		if (hr <0 && power < 0 && cadence < 0 && speed < 0 && altitude < 0 
+				&& latitude < 0 && longitude < 0 && distance < 0) {
 			Log.w(TAG, "TuranUploadService.onHandleIntent - sample with no data");
 			return;
 		}
@@ -91,6 +93,10 @@ public class TuranUploadService extends IntentService {
 		if (power >= 0) {
 			Log.v(TAG, "TuranUploadService.onHandleIntent - good POWER");
 			addToJSON(json, power, "power");
+		}
+		if (distance >= 0) {
+			Log.v(TAG, "TuranUploadService.onHandleIntent - good DISTANCE");
+			addToJSON(json, distance, "distance");
 		}
 		if (altitude >= 0) {
 			Log.v(TAG, "TuranUploadService.onHandleIntent - good ALTITUDE");
