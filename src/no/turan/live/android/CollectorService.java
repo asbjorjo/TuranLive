@@ -107,7 +107,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	public void hwConnHasData() {
 		Log.v(TAG, "CollectorService.hwConnHasData");
 		
-		if (sampleTime_ + sampleInterval_ <= System.currentTimeMillis()/1000L) {
+		if (sampleTime_ <= System.currentTimeMillis()/1000L) {
 			Intent sampleIntent = new Intent("no.turan.live.android.SAMPLE");
 			
 			sampleIntent.putExtra(Constants.SAMPLE_TIME_KEY, sampleTime_);
@@ -139,7 +139,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 			
 			sendBroadcast(sampleIntent);
 
-			sampleTime_ = System.currentTimeMillis()/1000L;
+			sampleTime_ = System.currentTimeMillis()/1000L + sampleInterval_;
 		}
 		
 		if (hrSensor_ != null) {
