@@ -274,7 +274,12 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		powerOn_ = preferences.getBoolean("power_enable", false);
 
 		if (hrOn_) {
-			hrSensor_ = new HRSensor();
+			try {
+				short hrId = Short.parseShort(preferences.getString("hr_id", "0"));
+				hrSensor_ = new HRSensor(hrId);
+			} catch (NumberFormatException e) {
+				hrSensor_ = new HRSensor();
+			}
 			hrSensor_.setupSensor(hardwareConnector_);
 		}
 		if (powerOn_) {

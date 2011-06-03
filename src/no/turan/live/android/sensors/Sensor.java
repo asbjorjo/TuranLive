@@ -7,12 +7,14 @@ import android.util.Log;
 import com.wahoofitness.api.WFHardwareConnector;
 import com.wahoofitness.api.comm.WFConnectionParams;
 import com.wahoofitness.api.comm.WFSensorConnection;
+import com.wahoofitness.api.comm.WFConnectionParams.WFDeviceParams;
 import com.wahoofitness.api.comm.WFSensorConnection.WFSensorConnectionStatus;
 
 public abstract class Sensor implements ISensor {
 	protected WFHardwareConnector hardwareConnector_;
 	protected WFSensorConnection sensor_;
 	protected short sensorType_;
+	protected short sensorId_ = 0;
 	protected int deadSamples_ = 0;
 	protected long previousSampleTime_ = 0;
 	protected boolean reconnectable_ = false;
@@ -21,8 +23,17 @@ public abstract class Sensor implements ISensor {
 		sensorType_ = sensorType;
 	}
 	
+	protected Sensor(short sensorType, short sensorId) {
+		sensorType_ = sensorType;
+		sensorId_ = sensorId;
+	}
+	
 	public int getSensorId() {
-		return sensor_.getDeviceNumber();
+		if (sensor_ != null) {
+			return sensor_.getDeviceNumber();
+		} else {
+			return sensorId_;
+		}
 	}
 
 	@Override
@@ -32,7 +43,15 @@ public abstract class Sensor implements ISensor {
 		} else {
 			Log.d(TAG, "Sensor.connectionStateChanged - " + sensorType_ + " - null");
 		}
-		if (sensor_ != null && !sensor_.isValid()) {
+		if (sensor_ != null && sensor_.isValid()) {
+			switch(sensor_.getConnectionStatus()) {
+			case WF_SENSOR_CONNECTION_STATUS_CONNECTED:
+			case WF_SENSOR_CONNECTION_STATUS_CONNECTING:	
+				reconnectable_ = false;
+				deadSamples_ = 0;
+				break;
+			}
+		} else if (sensor_ != null && !sensor_.isValid()) {
 			Log.d(TAG, "Sensor.connectionStateChanged - " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber() + " - invalid");
 			sensor_.setCallback(null);
 			sensor_ = null;
@@ -59,6 +78,7 @@ public abstract class Sensor implements ISensor {
 						break;
 					case WF_SENSOR_CONNECTION_STATUS_DISCONNECTING:
 					case WF_SENSOR_CONNECTION_STATUS_IDLE:
+						sensor_.setCallback(null);
 						sensor_ = null;
 						break;
 				}
@@ -66,12 +86,14 @@ public abstract class Sensor implements ISensor {
 			if (sensor_ == null) {
 				Log.d(TAG, "Sensor.connectSensor - " + sensorType_ + " - no sensor defined");
 				WFConnectionParams params = new WFConnectionParams();
+				WFDeviceParams deviceParam = new WFDeviceParams();
 				params.sensorType = sensorType_;
+				deviceParam.deviceNumber = sensorId_;
+				params.device1 = deviceParam;
 				sensor_ = hardwareConnector_.initSensorConnection(params);
 				if (sensor_ != null) {
 					Log.d(TAG, "Sensor.connectSensor - " + sensorType_ + " - initialised");
 					sensor_.setCallback(this);
-					reconnectable_ = false;
 				} else {
 					Log.e(TAG, "Sensor.connectSensor - " + sensorType_ + " - could not initialise");
 				}
@@ -107,6 +129,7 @@ public abstract class Sensor implements ISensor {
 			Log.d(TAG, "Sensor.deadSample threshold exceeded: " + sensor_.getSensorType() + " - " + sensor_.getDeviceNumber());
 			disconnectSensor();
 			connectSensor();
+			reconnectable_ = true;
 		}
 	}
 }

@@ -14,14 +14,30 @@
    	<CheckBoxPreference android:title="Heart Rate"
    						android:key="hr_enable"
    						android:defaultValue="false"/>
+   	<EditTextPreference android:title="Sensor ID"
+   						android:key="hr_id"
+   						android:defaultValue="0"
+   						android:dependency="hr_enable"/>
    	<CheckBoxPreference android:title="Power"
    						android:key="power_enable"
    						android:defaultValue="false"/>
+   	<EditTextPreference android:title="Sensor ID"
+   						android:key="power_id"
+   						android:defaultValue="0"
+   						android:dependency="power_enable"/>
    	<CheckBoxPreference android:title="Cadence"
  						android:key="cadence_enable"
    						android:defaultValue="false"/>
+   	<EditTextPreference android:title="Sensor ID"
+   						android:key="cadence_id"
+   						android:defaultValue="0"
+   						android:dependency="cadence_enable"/>
    	<CheckBoxPreference android:title="Speed"
    						android:key="speed_enable"
    						android:defaultValue="false"/>
+   	<EditTextPreference android:title="Sensor ID"
+   						android:key="speed_id"
+   						android:defaultValue="0"
+   						android:dependency="speed_enable"/>
   </PreferenceCategory>
 </PreferenceScreen>
