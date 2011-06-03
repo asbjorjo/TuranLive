@@ -16,8 +16,6 @@ import com.wahoofitness.api.data.WFBikePowerRawData;
 import com.wahoofitness.api.data.WFBikePowerWheelTorqueData;
 
 public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor, ISpeedSensor {
-	private int nullValues_ = 0;
-	
 	public PowerSensor() {
 		super(WFSensorType.WF_SENSORTYPE_BIKE_POWER);
 	}
@@ -193,7 +191,6 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 		if (power >= 0) {
 			Log.v(TAG, "PowerSensor.retrieveData - good power");
 			intent.putExtra(SAMPLE_POWER_KEY, power);
-			nullValues_ = 0;
 		}
 		if (cadence >= 0) {
 			intent.putExtra(Constants.SAMPLE_CADENCE_KEY, cadence);
@@ -212,7 +209,6 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 		if (power >= 0) {
 			Log.v(TAG, "PowerSensor.retrieveData - good power");
 			sensorData.setPower(power);
-			nullValues_ = 0;
 		}
 		if (cadence >= 0) {
 			sensorData.setCadence(cadence);
