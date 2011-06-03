@@ -2,10 +2,8 @@ package no.turan.live.android;
 
 
 import static no.turan.live.android.Constants.MIN_GPS_ACCURACY;
-import static no.turan.live.android.Constants.MPS_TO_KPH;
 import static no.turan.live.android.Constants.SAMPLE_ALTITUDE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
-import static no.turan.live.android.Constants.SAMPLE_EXERCISE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
 import static no.turan.live.android.Constants.SAMPLE_LATITUDE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_LONGITUDE_KEY;
@@ -16,11 +14,7 @@ import static no.turan.live.android.Constants.TAG;
 
 import java.util.ArrayList;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import no.turan.live.android.sensors.HRSensor;
 import no.turan.live.android.sensors.ICadenceSensor;
@@ -29,6 +23,10 @@ import no.turan.live.android.sensors.IPowerSensor;
 import no.turan.live.android.sensors.ISpeedSensor;
 import no.turan.live.android.sensors.PowerSensor;
 import no.turan.live.android.sensors.SensorData;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;

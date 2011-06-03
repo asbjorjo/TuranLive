@@ -1,21 +1,11 @@
 package no.turan.live.android;
 
-import static no.turan.live.android.Constants.SAMPLE_ALTITUDE_KEY;
-import static no.turan.live.android.Constants.SAMPLE_CADENCE_KEY;
 import static no.turan.live.android.Constants.SAMPLE_EXERCISE_KEY;
-import static no.turan.live.android.Constants.SAMPLE_HR_KEY;
-import static no.turan.live.android.Constants.SAMPLE_LATITUDE_KEY;
-import static no.turan.live.android.Constants.SAMPLE_LONGITUDE_KEY;
-import static no.turan.live.android.Constants.SAMPLE_POWER_KEY;
-import static no.turan.live.android.Constants.SAMPLE_SPEED_KEY;
-import static no.turan.live.android.Constants.SAMPLE_TIME_KEY;
 import static no.turan.live.android.Constants.TAG;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Collection;
-
 
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
@@ -28,10 +18,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import android.app.Application;
 import android.app.IntentService;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
 import android.util.Log;
 
 public class TuranUploadService extends IntentService {
