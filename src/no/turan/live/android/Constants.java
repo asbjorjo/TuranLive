@@ -18,6 +18,7 @@ public abstract class Constants {
 	public static final String SAMPLE_LATITUDE_KEY = "no.turan.live.android.LATITUDE";
 	public static final String SAMPLE_LONGITUDE_KEY = "no.turan.live.android.LONGITUDE";
 	
+	public static final int BAD_LOCATION_THRESHOLD = 5;
 	public static final int DEAD_SAMPLE_THRESHOLD = 10;
 	public static final float MIN_GPS_ACCURACY = 20f;
 	public static final float MPS_TO_KPH = 3.6f;
