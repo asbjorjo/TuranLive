@@ -18,14 +18,12 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.text.InputType;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 public class TuranLive extends Activity {
@@ -52,7 +50,7 @@ public class TuranLive extends Activity {
 	private BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			Log.d(TAG, intent.getAction());
+			Log.d(TAG, "TuranLive.broadcastReceiver - " + intent.getAction());
 			if (intent.getAction().equals("no.turan.live.android.COLLECTOR_STARTED")) {
 				updateMain();
 			} else if (intent.getAction().equals("no.turan.live.android.COLLECTOR_STOPPED")) {
