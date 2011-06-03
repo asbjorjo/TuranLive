@@ -16,6 +16,8 @@ import com.wahoofitness.api.data.WFBikePowerRawData;
 import com.wahoofitness.api.data.WFBikePowerWheelTorqueData;
 
 public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor, ISpeedSensor {
+	private int nullValues_ = 0;
+	
 	public PowerSensor() {
 		super(WFSensorType.WF_SENSORTYPE_BIKE_POWER);
 	}
@@ -187,13 +189,15 @@ public class PowerSensor extends Sensor implements IPowerSensor, ICadenceSensor,
 		 * Invalid power and/or cadence while sensor is connected usually 
 		 * means we are not pedalling and sensor has gone to sleep.
 		 */
-		if (power <= 0 && cadence <= 0 && sensor_ != null && sensor_.isConnected()) {
+		if (power <= 0 && cadence <= 0 && sensor_ != null && sensor_.isConnected() 
+				&& ++nullValues_ > Constants.POWER_NULL_VALUE_THRESHOLD) {
 			Log.d(TAG, "PowerSensor.retrieveData - coasting");
 			power = 0;
 			cadence = 0;
 		}
 		
 		if (power >= 0) {
+			nullValues_ = 0;
 			intent.putExtra(SAMPLE_POWER_KEY, power);
 		}
 		if (cadence >= 0) {
