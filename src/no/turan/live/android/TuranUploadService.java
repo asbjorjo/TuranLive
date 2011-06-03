@@ -26,8 +26,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.app.Application;
 import android.app.IntentService;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.util.Log;
 
 public class TuranUploadService extends IntentService {
@@ -71,6 +73,11 @@ public class TuranUploadService extends IntentService {
 		}
 		if (hr >= 0) {
 			Log.v(TAG, "TuranUploadService.onHandleIntent - good HR");
+			if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) == 
+				ApplicationInfo.FLAG_DEBUGGABLE && hr < 80) {
+				Log.d(TAG, "TuranUploadService.onHandleIntent - adjusting hr");
+				hr = hr+80;
+			}
 			addToJSON(json, hr, "hr");
 		}
 		if (speed >= 0) {
