@@ -388,7 +388,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		} else if (++badLocationCount_ > Constants.BAD_LOCATION_THRESHOLD) {
 			lastLocation_ = null;
 			distance_ = 0;
-		} else {
+		} else if (lastLocation_ != null) {
 			sampleIntent_.putExtra(SAMPLE_LATITUDE_KEY, lastLocation_.getLatitude());
 			sampleIntent_.putExtra(SAMPLE_LONGITUDE_KEY, lastLocation_.getLongitude());
 			if (lastLocation_.hasAltitude()) {
