@@ -8,6 +8,12 @@
   	<EditTextPreference android:title="Exercise"
   						android:key="turan_exercise"
   						android:defaultValue="0"/>
+  	<EditTextPreference android:title="Sampling interval"
+  						android:key="turan_sampling_interval"
+  						android:defaultValue="1"/>
+  	<EditTextPreference android:title="Upload interval"
+  						android:key="turan_upload_interval"
+  						android:defaultValue="5"/>
   </PreferenceCategory>
   
   <PreferenceCategory android:title="Sensors">

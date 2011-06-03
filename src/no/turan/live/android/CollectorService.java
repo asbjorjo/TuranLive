@@ -73,6 +73,9 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	private float distance_ = 0;
 	private SensorData sensorSample_;
 	private Queue<String> uploadQueue_;
+	private int sampleInterval_;
+	private int uploadInterval_;
+	private SharedPreferences preferences_;
 	
 	@Override
 	public void hwConnAntError(WFAntError error) {
@@ -104,8 +107,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	public void hwConnHasData() {
 		Log.v(TAG, "CollectorService.hwConnHasData");
 		
-		if (sampleTime_ < System.currentTimeMillis()/1000L) {
-			// Send a sample every second.
+		if (sampleTime_ + sampleInterval_ <= System.currentTimeMillis()/1000L) {
 			Intent sampleIntent = new Intent("no.turan.live.android.SAMPLE");
 			
 			sampleIntent.putExtra(Constants.SAMPLE_TIME_KEY, sampleTime_);
@@ -122,7 +124,7 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 			String sampleJson = sampleJson(sampleIntent);
 			uploadQueue_.offer(sampleJson);
 			
-			if (live_ && uploadQueue_.size() >= 5) {
+			if (live_ && uploadQueue_.size() >= uploadInterval_) {
 				Intent uploadIntent = new Intent(this, TuranUploadService.class);
 				ArrayList<String> samples = new ArrayList<String>();
 
@@ -312,8 +314,16 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		Log.v(TAG, "CollectorService.onStartCommand");
-		
+
 		Context context = this.getApplicationContext();
+		preferences_ = PreferenceManager.getDefaultSharedPreferences(context);
+		
+		String interval = preferences_.getString("turan_sampling_interval", "1");
+		try {
+			sampleInterval_ = Integer.parseInt(interval);
+		} catch (NumberFormatException e) {
+			sampleInterval_ = 1;
+		}
 		
     	LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
     	lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
@@ -420,6 +430,12 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		public void goLive(int exerciseId) {
 			Log.d(TAG, "CollectorBinder.goLive - " + exerciseId);
 			if (exerciseId > 0) {
+				String interval = preferences_.getString("turan_upload_interval", "5");
+				try {
+					uploadInterval_ = Integer.parseInt(interval);
+				} catch (NumberFormatException e) {
+					uploadInterval_ = 5;
+				}
 				exerciseId_ = exerciseId;
 				live_ = true;
 			}
