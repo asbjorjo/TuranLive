@@ -121,20 +121,13 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 			if (sensorSample_.hasSpeed_())
 				sampleIntent.putExtra(Constants.SAMPLE_SPEED_KEY, sensorSample_.getSpeed());
 			
-			String sampleJson = sampleJson(sampleIntent);
-			uploadQueue_.offer(sampleJson);
-			
-			if (live_ && uploadQueue_.size() >= uploadInterval_) {
-				Intent uploadIntent = new Intent(this, TuranUploadService.class);
-				ArrayList<String> samples = new ArrayList<String>();
-
-				while (!uploadQueue_.isEmpty()) {
-					samples.add(uploadQueue_.remove());
+			if (live_) {
+				if (uploadQueue_.size() >= uploadInterval_) {
+					processUploadQueue();
+				} else {
+					String jsonSample = sampleJson(sampleIntent);
+					uploadQueue_.add(jsonSample);
 				}
-				
-				uploadIntent.putExtra(Constants.SAMPLE_EXERCISE_KEY, exerciseId_);
-				uploadIntent.putExtra(Constants.SAMPLES_KEY, samples);
-				startService(uploadIntent);
 			}
 			
 			sendBroadcast(sampleIntent);
@@ -281,9 +274,14 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 		lm.removeUpdates(this);
 		
+		if (live_) {
+			processUploadQueue();
+		}
+		
 		live_ = false;
 		collecting_ = false;
 		exerciseId_ = 0;
+		uploadQueue_ = null;
 		
 		Intent antState = new Intent("no.turan.live.android.ANT_STATE");
 		antState.putExtra("no.turan.live.android.ANT_STATE", "Disconnected");
@@ -450,6 +448,9 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 		@Override
 		public void goOff() {
 			Log.d(TAG, "CollectorBinder.goOff");
+			if (uploadQueue_.size() > 0) {
+				processUploadQueue();
+			}
 			live_ = false;
 		}
 
@@ -464,6 +465,20 @@ public class CollectorService extends Service implements WFHardwareConnector.Cal
 	public IBinder onBind(Intent intent) {
 		Log.v(TAG, "CollectorService.onBind");
 		return mBinder;
+	}
+
+	public void processUploadQueue() {
+		Log.v(TAG, "CollectorService.processUploadQueue");
+		Intent uploadIntent = new Intent(this, TuranUploadService.class);
+		ArrayList<String> samples = new ArrayList<String>();
+
+		while (!uploadQueue_.isEmpty()) {
+			samples.add(uploadQueue_.remove());
+		}
+		
+		uploadIntent.putExtra(Constants.SAMPLE_EXERCISE_KEY, exerciseId_);
+		uploadIntent.putExtra(Constants.SAMPLES_KEY, samples);
+		startService(uploadIntent);
 	}
 
 	@Override
